@@ -1,0 +1,1 @@
+export { default as ProfileScreenStyles } from './profileScreenStyles';

@@ -1,0 +1,42 @@
+diff --git a/node_modules/react-native-google-places-autocomplete/GooglePlacesAutocomplete.js b/node_modules/react-native-google-places-autocomplete/GooglePlacesAutocomplete.js
+index 60836de..a59d9f2 100644
+--- a/node_modules/react-native-google-places-autocomplete/GooglePlacesAutocomplete.js
++++ b/node_modules/react-native-google-places-autocomplete/GooglePlacesAutocomplete.js
+@@ -718,15 +718,10 @@ export const GooglePlacesAutocomplete = forwardRef((props, ref) => {
+
+   const _renderRow = (rowData = {}, index) => {
+     return (
+-      <ScrollView
+-        contentContainerStyle={
+-          props.isRowScrollable ? { minWidth: '100%' } : { width: '100%' }
+-        }
+-        scrollEnabled={props.isRowScrollable}
+-        keyboardShouldPersistTaps={props.keyboardShouldPersistTaps}
+-        horizontal={true}
+-        showsHorizontalScrollIndicator={false}
+-        showsVerticalScrollIndicator={false}
++      <View
++        style={[
++          props.isRowScrollable ? { minWidth: '100%' } : { width: '100%' },
++        ]}
+       >
+         <Pressable
+           style={({ hovered, pressed }) => [
+@@ -753,7 +748,7 @@ export const GooglePlacesAutocomplete = forwardRef((props, ref) => {
+             {_renderRowData(rowData, index)}
+           </View>
+         </Pressable>
+-      </ScrollView>
++      </View>
+     );
+   };
+
+@@ -904,7 +899,7 @@ export const GooglePlacesAutocomplete = forwardRef((props, ref) => {
+     clearButtonMode,
+     InputComp,
+     ...userProps
+-  } = props.textInputProps;
++  } = props.textInputProps || {};
+   const TextInputComp = InputComp || TextInput;
+   return (
+     <View

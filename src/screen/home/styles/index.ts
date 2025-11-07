@@ -1,0 +1,1 @@
+export {default as HomeStyles} from './homeStyles';
