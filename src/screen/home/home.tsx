@@ -29,7 +29,7 @@ interface HomeProps {
   };
 }
 
-const Home: React.FC<HomeProps> = () => {
+const Home: React.FC<HomeProps> = ({ navigation }) => {
   const dispatch = useDispatch();
   const { userData } = useSelector((state: { otp: { userData: { firstName?: string; lastName?: string } } }) => state.otp);
   const userName = userData?.firstName || 'Resident';
@@ -123,17 +123,29 @@ const Home: React.FC<HomeProps> = () => {
   ];
 
   const renderQuickAction = ({ item }: { item: QuickActionItem }) => {
+    const handlePress = () => {
+      if (item.label === 'Visitors') {
+        navigation.navigate('VisitorManagement');
+      } else if (item.label === 'Parking') {
+        navigation.navigate('ParkingManagement');
+      } else if (item.label === 'Maintenance') {
+        navigation.navigate('MaintenanceManagement');
+      } else if (item.label === 'Complaints') {
+        navigation.navigate('ComplaintManagement');
+      } else {
+        Alert.alert(
+          'Coming Soon',
+          `${item.label} feature will be available soon.`,
+          [{ text: 'OK' }]
+        );
+      }
+    };
+
     return (
       <TouchableOpacity
         activeOpacity={0.8}
         style={HomeStyles.menuItem}
-        onPress={() => {
-          Alert.alert(
-            'Coming Soon',
-            `${item.label} feature will be available soon.`,
-            [{ text: 'OK' }]
-          );
-        }}
+        onPress={handlePress}
       >
         <Image source={item.image} style={HomeStyles.menuIcon} />
         <Text style={HomeStyles.menuLabel}>{item.label}</Text>

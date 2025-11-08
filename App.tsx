@@ -1,4 +1,4 @@
-import React, { Component } from 'react';
+import React, { useEffect } from 'react';
 import { View, StyleSheet } from 'react-native';
 import RootNavigation from './src/navigation';
 import { Provider } from 'react-redux';
@@ -6,9 +6,15 @@ import { persistor, store } from './src/store';
 import { PersistGate } from 'redux-persist/integration/react';
 import { MenuProvider } from "react-native-popup-menu";
 import 'react-native-get-random-values';
+import Database from './src/services/database';
 
 // create a component
 const App = () => {
+  useEffect(() => {
+    // Initialize unified database on app start
+    Database.initialize();
+  }, []);
+
   return (
     <View style={styles.container}>
        <MenuProvider>

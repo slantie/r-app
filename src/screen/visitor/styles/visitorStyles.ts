@@ -1,0 +1,393 @@
+import { StyleSheet } from 'react-native';
+import { COLORS, FF, FS } from '../../../constants';
+
+const VisitorStyles = StyleSheet.create({
+  container: {
+    flex: 1,
+    backgroundColor: COLORS.BG_GREY,
+  },
+  contentWrapper: {
+    flex: 1,
+    paddingHorizontal: 16,
+  },
+  tabContainer: {
+    flexDirection: 'row',
+    backgroundColor: COLORS.WHITE,
+    borderRadius: 12,
+    padding: 4,
+    marginVertical: 16,
+    shadowColor: COLORS.BLACK,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 2,
+  },
+  tab: {
+    flex: 1,
+    paddingVertical: 12,
+    alignItems: 'center',
+    borderRadius: 8,
+  },
+  activeTab: {
+    backgroundColor: COLORS.DARK_BLUE,
+  },
+  tabText: {
+    fontFamily: FF[500],
+    fontSize: FS.FS14,
+    color: COLORS.GREY_TEXT,
+  },
+  activeTabText: {
+    color: COLORS.WHITE,
+    fontFamily: FF[600],
+  },
+  emptyContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingVertical: 60,
+  },
+  emptyIcon: {
+    fontSize: 64,
+    marginBottom: 16,
+  },
+  emptyText: {
+    fontFamily: FF[500],
+    fontSize: FS.FS16,
+    color: COLORS.GREY_TEXT,
+    textAlign: 'center',
+  },
+  emptySubText: {
+    fontFamily: FF[400],
+    fontSize: FS.FS14,
+    color: COLORS.GREY_TEXT,
+    textAlign: 'center',
+    marginTop: 8,
+  },
+  visitorCard: {
+    backgroundColor: COLORS.WHITE,
+    borderRadius: 12,
+    padding: 16,
+    marginBottom: 12,
+    shadowColor: COLORS.BLACK,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 2,
+  },
+  visitorHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'flex-start',
+    marginBottom: 12,
+  },
+  visitorInfo: {
+    flex: 1,
+  },
+  visitorName: {
+    fontFamily: FF[600],
+    fontSize: FS.FS16,
+    color: COLORS.BLACK_TEXT,
+    marginBottom: 4,
+  },
+  visitorPhone: {
+    fontFamily: FF[400],
+    fontSize: FS.FS14,
+    color: COLORS.GREY_TEXT,
+  },
+  statusBadge: {
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 12,
+  },
+  statusPending: {
+    backgroundColor: '#FFF3E0',
+  },
+  statusApproved: {
+    backgroundColor: '#E8F5E9',
+  },
+  statusActive: {
+    backgroundColor: '#E3F2FD',
+  },
+  statusCompleted: {
+    backgroundColor: '#F5F5F5',
+  },
+  statusText: {
+    fontFamily: FF[600],
+    fontSize: FS.FS12,
+  },
+  statusTextPending: {
+    color: '#F57C00',
+  },
+  statusTextApproved: {
+    color: '#4CAF50',
+  },
+  statusTextActive: {
+    color: '#2196F3',
+  },
+  statusTextCompleted: {
+    color: COLORS.GREY_TEXT,
+  },
+  visitorDetails: {
+    borderTopWidth: 1,
+    borderTopColor: COLORS.BORDER_GREY,
+    paddingTop: 12,
+  },
+  detailRow: {
+    flexDirection: 'row',
+    marginBottom: 8,
+  },
+  detailLabel: {
+    fontFamily: FF[500],
+    fontSize: FS.FS13,
+    color: COLORS.GREY_TEXT,
+    width: 100,
+  },
+  detailValue: {
+    fontFamily: FF[400],
+    fontSize: FS.FS13,
+    color: COLORS.BLACK_TEXT,
+    flex: 1,
+  },
+  actionButtons: {
+    flexDirection: 'row',
+    marginTop: 12,
+    gap: 8,
+  },
+  actionButton: {
+    flex: 1,
+    paddingVertical: 10,
+    borderRadius: 8,
+    alignItems: 'center',
+    borderWidth: 1,
+  },
+  viewButton: {
+    backgroundColor: COLORS.WHITE,
+    borderColor: COLORS.DARK_BLUE,
+  },
+  viewButtonText: {
+    color: COLORS.DARK_BLUE,
+    fontFamily: FF[600],
+    fontSize: FS.FS14,
+  },
+  cancelButton: {
+    backgroundColor: COLORS.WHITE,
+    borderColor: '#F44336',
+  },
+  cancelButtonText: {
+    color: '#F44336',
+    fontFamily: FF[600],
+    fontSize: FS.FS14,
+  },
+  fabButton: {
+    position: 'absolute',
+    right: 20,
+    bottom: 20,
+    width: 60,
+    height: 60,
+    borderRadius: 30,
+    backgroundColor: COLORS.DARK_BLUE,
+    justifyContent: 'center',
+    alignItems: 'center',
+    shadowColor: COLORS.BLACK,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 6,
+    elevation: 6,
+  },
+  fabIcon: {
+    fontSize: 28,
+  },
+  // Add Visitor Form Styles
+  formContainer: {
+    padding: 16,
+  },
+  inputGroup: {
+    marginBottom: 20,
+  },
+  label: {
+    fontFamily: FF[600],
+    fontSize: FS.FS14,
+    color: COLORS.BLACK_TEXT,
+    marginBottom: 8,
+  },
+  input: {
+    backgroundColor: COLORS.WHITE,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: COLORS.BORDER_GREY,
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    fontFamily: FF[400],
+    fontSize: FS.FS15,
+    color: COLORS.BLACK_TEXT,
+  },
+  inputMultiline: {
+    height: 80,
+    textAlignVertical: 'top',
+  },
+  dateTimeButton: {
+    backgroundColor: COLORS.WHITE,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: COLORS.BORDER_GREY,
+    paddingHorizontal: 16,
+    paddingVertical: 14,
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+  dateTimeText: {
+    fontFamily: FF[400],
+    fontSize: FS.FS15,
+    color: COLORS.BLACK_TEXT,
+  },
+  dateTimePlaceholder: {
+    color: COLORS.GREY_TEXT,
+  },
+  submitButton: {
+    backgroundColor: COLORS.DARK_BLUE,
+    borderRadius: 8,
+    paddingVertical: 16,
+    alignItems: 'center',
+    marginTop: 20,
+    marginBottom: 40,
+  },
+  submitButtonText: {
+    color: COLORS.WHITE,
+    fontFamily: FF[600],
+    fontSize: FS.FS16,
+  },
+  // Visitor Details Screen
+  detailsContainer: {
+    flex: 1,
+    backgroundColor: COLORS.BG_GREY,
+  },
+  detailsHeader: {
+    backgroundColor: COLORS.WHITE,
+    padding: 20,
+    borderBottomLeftRadius: 20,
+    borderBottomRightRadius: 20,
+    shadowColor: COLORS.BLACK,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 3,
+  },
+  detailsName: {
+    fontFamily: FF[700],
+    fontSize: FS.FS24,
+    color: COLORS.BLACK_TEXT,
+    marginBottom: 8,
+  },
+  detailsPhone: {
+    fontFamily: FF[400],
+    fontSize: FS.FS16,
+    color: COLORS.GREY_TEXT,
+  },
+  badgeRow: {
+    flexDirection: 'row',
+    marginTop: 8,
+  },
+  qrSection: {
+    backgroundColor: COLORS.WHITE,
+    margin: 16,
+    padding: 20,
+    borderRadius: 12,
+    alignItems: 'center',
+    shadowColor: COLORS.BLACK,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 2,
+  },
+  qrText: {
+    fontFamily: FF[500],
+    fontSize: FS.FS14,
+    color: COLORS.GREY_TEXT,
+    textAlign: 'center',
+    marginTop: 16,
+  },
+  qrSubText: {
+    fontFamily: FF[400],
+    fontSize: FS.FS12,
+    color: COLORS.GREY_TEXT,
+    textAlign: 'center',
+    marginTop: 4,
+  },
+  infoSection: {
+    backgroundColor: COLORS.WHITE,
+    marginHorizontal: 16,
+    padding: 20,
+    borderRadius: 12,
+    marginBottom: 16,
+    shadowColor: COLORS.BLACK,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 2,
+  },
+  sectionTitle: {
+    fontFamily: FF[600],
+    fontSize: FS.FS16,
+    color: COLORS.BLACK_TEXT,
+    marginBottom: 16,
+  },
+  infoRow: {
+    flexDirection: 'row',
+    paddingVertical: 12,
+    borderBottomWidth: 1,
+    borderBottomColor: COLORS.BORDER_GREY,
+  },
+  infoRowLast: {
+    borderBottomWidth: 0,
+  },
+  infoLabel: {
+    fontFamily: FF[500],
+    fontSize: FS.FS14,
+    color: COLORS.GREY_TEXT,
+    width: 120,
+  },
+  infoValue: {
+    fontFamily: FF[400],
+    fontSize: FS.FS14,
+    color: COLORS.BLACK_TEXT,
+    flex: 1,
+  },
+  actionSection: {
+    flexDirection: 'row',
+    marginHorizontal: 16,
+    gap: 12,
+    marginBottom: 20,
+  },
+  primaryButton: {
+    flex: 1,
+    backgroundColor: COLORS.DARK_BLUE,
+    paddingVertical: 16,
+    borderRadius: 8,
+    alignItems: 'center',
+  },
+  primaryButtonText: {
+    color: COLORS.WHITE,
+    fontFamily: FF[600],
+    fontSize: FS.FS16,
+  },
+  secondaryButton: {
+    flex: 1,
+    backgroundColor: COLORS.WHITE,
+    paddingVertical: 16,
+    borderRadius: 8,
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: '#F44336',
+  },
+  secondaryButtonText: {
+    color: '#F44336',
+    fontFamily: FF[600],
+    fontSize: FS.FS16,
+  },
+  listContentEmpty: {
+    flex: 1,
+  },
+});
+
+export default VisitorStyles;
