@@ -32,7 +32,7 @@ export async function MakeApiRequest({
   apiData = {},
   apiHeaders = {},
   apiParams = {},
-  timeout = 15000,
+  timeout = 30000,
 }: ApiRequestProps): Promise<AxiosResponse<any>> {
 
   const token = await PrefManager.getValue(STRING.TOKEN);

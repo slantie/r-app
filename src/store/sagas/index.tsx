@@ -28,6 +28,15 @@ import createPropertyWatcherSaga from "./profile/createPropertySaga";
 import getPropertyListWatcherSaga from "./profile/getPropertyListSaga";
 import getProfessionalListWatcherSaga from "./profile/getProfessionalListSaga";
 import createProfessionalWatcherSaga from "./profile/createProfessionalSaga";
+// Society Management Sagas
+import watchDashboard from "./dashboardSaga";
+import watchNotices from "./noticesSaga";
+import watchAmenities from "./amenitiesSaga";
+import watchEvents from "./eventsSaga";
+import watchMaintenance from "./maintenanceSaga";
+import watchParking from "./parkingSaga";
+import watchVisitors from "./visitorsSaga";
+import watchComplaints from "./complaintsSaga";
 
 
 export default function* rootSaga() {
@@ -66,5 +75,14 @@ export default function* rootSaga() {
     createProfessionalWatcherSaga(),
     // memberListWatcherSaga(),
 
+    // Society Management
+    watchDashboard(),
+    watchNotices(),
+    watchAmenities(),
+    watchEvents(),
+    watchMaintenance(),
+    watchParking(),
+    watchVisitors(),
+    watchComplaints(),
   ]);
 }

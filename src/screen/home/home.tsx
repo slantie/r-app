@@ -1,5 +1,5 @@
 import React, { useEffect } from 'react';
-import { View, Text, FlatList, TouchableOpacity, Alert, ScrollView } from 'react-native';
+import { View, Text, FlatList, TouchableOpacity, Alert, ScrollView, ActivityIndicator } from 'react-native';
 import { useDispatch, useSelector } from 'react-redux';
 import { HomeStyles } from './styles';
 import Container from '../../components/common/container';
@@ -7,6 +7,8 @@ import Images from '../../constants/images';
 import { Image } from 'react-native';
 import { userDetailAction } from '../../store/actions/auth/userDetailAction';
 import { selectUserDetailData } from '../../store/selectors/auth';
+import { fetchDashboardData, fetchQuickStats } from '../../store/actions/dashboard/dashboardAction';
+import { RootState } from '../../store/reducers';
 
 interface QuickActionItem {
   id: string;
@@ -36,10 +38,9 @@ const Home: React.FC<HomeProps> = ({ navigation }) => {
   const userDetailData = useSelector(selectUserDetailData);
   const user = userDetailData?.data?.result;
 
-  const unitInfo = 'A-101, Shivalik Heights';
-  const maintenanceDue = '₹5,000';
-  const pendingComplaints = 1;
-  const upcomingBookings = 2;
+  // Redux Dashboard State
+  const dashboardState = useSelector((state: RootState) => state.dashboard);
+  const { loading, data, quickStats, error } = dashboardState;
 
   const userDetailsApi = React.useCallback(() => {
     dispatch(userDetailAction() as never);
@@ -51,13 +52,55 @@ const Home: React.FC<HomeProps> = ({ navigation }) => {
     }
   }, [user, userDetailsApi]);
 
-  // Latest notice preview
-  const latestNotice: NoticePreview = {
-    id: '1',
-    title: 'Water Supply Disruption Tomorrow',
-    priority: 'urgent',
-    date: 'Nov 9, 2025',
-  };
+  // Get unitId from authenticated user data
+  // Extract from user detail data structure
+  const unitId = userDetailData?.data?.result?.unitId ||
+                 userDetailData?.data?.result?.unit?._id ||
+                 user?.unitId ||
+                 user?.unit?._id;
+
+  // Fetch dashboard data when unitId is available
+  useEffect(() => {
+    if (unitId) {
+      dispatch(fetchDashboardData(unitId) as never);
+      dispatch(fetchQuickStats(unitId) as never);
+    }
+  }, [dispatch, unitId]);
+
+  // Extract data from dashboard response
+  const unitInfo = data?.unitInfo
+    ? `${data.unitInfo.blockName}-${data.unitInfo.unitNumber}`
+    : 'Loading...';
+
+  const maintenanceDue = data?.pendingBill
+    ? `₹${data.pendingBill.amount}`
+    : '₹0';
+
+  const pendingComplaints = quickStats?.activeComplaints || 0;
+  const upcomingBookings = quickStats?.activeBookings || 0;
+
+  // Latest notice from dashboard data
+  const latestNotice: NoticePreview = data?.recentNotices?.[0]
+    ? {
+        id: data.recentNotices[0]._id,
+        title: data.recentNotices[0].title,
+        priority: data.recentNotices[0].priority || 'normal',
+        date: new Date(data.recentNotices[0].createdAt).toLocaleDateString('en-US', {
+          month: 'short',
+          day: 'numeric',
+          year: 'numeric'
+        }),
+      }
+    : {
+        id: '1',
+        title: 'No new notices',
+        priority: 'normal',
+        date: new Date().toLocaleDateString('en-US', {
+          month: 'short',
+          day: 'numeric',
+          year: 'numeric'
+        }),
+      };
 
   const getPriorityColor = (priority: string): string => {
     switch (priority) {
@@ -152,6 +195,50 @@ const Home: React.FC<HomeProps> = ({ navigation }) => {
       </TouchableOpacity>
     );
   };
+
+  // Show loading indicator while fetching data
+  if (loading && !data) {
+    return (
+      <Container>
+        <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
+          <ActivityIndicator size="large" color="#5773FF" />
+          <Text style={{ marginTop: 16, color: '#666', fontSize: 16 }}>
+            Loading dashboard...
+          </Text>
+        </View>
+      </Container>
+    );
+  }
+
+  // Show error if any
+  if (error && !data) {
+    return (
+      <Container>
+        <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', padding: 20 }}>
+          <Text style={{ color: '#F44336', fontSize: 16, textAlign: 'center' }}>
+            {error}
+          </Text>
+          <TouchableOpacity
+            style={{
+              marginTop: 20,
+              backgroundColor: '#5773FF',
+              paddingHorizontal: 24,
+              paddingVertical: 12,
+              borderRadius: 8,
+            }}
+            onPress={() => {
+              dispatch(fetchDashboardData(UNIT_ID) as never);
+              dispatch(fetchQuickStats(UNIT_ID) as never);
+            }}
+          >
+            <Text style={{ color: '#fff', fontSize: 16, fontWeight: '600' }}>
+              Retry
+            </Text>
+          </TouchableOpacity>
+        </View>
+      </Container>
+    );
+  }
 
   return (
     <Container>

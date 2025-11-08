@@ -37,6 +37,15 @@ import { createProfessionalReducer } from "./profile/createProfessionalReducer";
 import feedbackReducer from "./feedback/feedbackReducer";
 import getFeedbackModuleListReducer from "./feedback/getFeedbackModuleReducer";
 import { RESET_STORE } from "../actionType";
+// Society Management Reducers
+import dashboardReducer from "./dashboardReducer";
+import noticesReducer from "./noticesReducer";
+import amenitiesReducer from "./amenitiesReducer";
+import eventsReducer from "./eventsReducer";
+import maintenanceReducer from "./maintenanceReducer";
+import parkingReducer from "./parkingReducer";
+import visitorsReducer from "./visitorsReducer";
+import complaintsReducer from "./complaintsReducer";
 
 
 const appReducer = combineReducers({
@@ -75,6 +84,15 @@ const appReducer = combineReducers({
   getFeedbackModuleList: getFeedbackModuleListReducer,
   getProfessionalList: getProfessionalListReducer,
   createProfessional: createProfessionalReducer,
+  // Society Management
+  dashboard: dashboardReducer,
+  notices: noticesReducer,
+  amenities: amenitiesReducer,
+  events: eventsReducer,
+  maintenance: maintenanceReducer,
+  parking: parkingReducer,
+  visitors: visitorsReducer,
+  complaints: complaintsReducer,
 });
 
 export type RootState = ReturnType<typeof appReducer>;
