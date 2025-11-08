@@ -155,6 +155,14 @@ const SettingStyles = StyleSheet.create({
         shadowRadius: 2,
         elevation: 1,
     },
+    menuItemLeft: {
+        flexDirection: 'row',
+        alignItems: 'center',
+    },
+    menuIcon: {
+        fontSize: 20,
+        marginRight: 12,
+    },
     menuText: {
         fontFamily: FF[500],
         fontSize: FS.FS15,
@@ -240,6 +248,67 @@ const SettingStyles = StyleSheet.create({
         fontFamily: FF[400],
         fontSize: FS.FS13,
         color: COLORS.GREY_TEXT,
+    },
+    profileCardTouch: {
+        paddingVertical: 20,
+        paddingHorizontal: 20,
+    },
+    profileEmail: {
+        fontSize: 13,
+        color: COLORS.GREY_TEXT,
+        marginTop: 4,
+    },
+    unitInfoCard: {
+        marginTop: 16,
+        backgroundColor: '#E3F2FD',
+        padding: 16,
+        borderRadius: 8,
+        width: '90%',
+        alignSelf: 'center',
+    },
+    unitLabel: {
+        fontSize: 12,
+        color: COLORS.GREY_TEXT,
+        marginBottom: 4,
+    },
+    unitText: {
+        fontSize: 18,
+        fontFamily: FF[600],
+        color: COLORS.BLACK,
+        marginBottom: 2,
+    },
+    badgeRow: {
+        flexDirection: 'row',
+        marginTop: 8,
+    },
+    residentBadge: {
+        paddingHorizontal: 10,
+        paddingVertical: 4,
+        borderRadius: 12,
+        marginRight: 8,
+    },
+    badgeText: {
+        color: COLORS.WHITE,
+        fontSize: 11,
+        fontFamily: FF[600],
+    },
+    memberSinceText: {
+        fontSize: 12,
+        color: COLORS.GREY_TEXT,
+        alignSelf: 'center',
+    },
+    scrollView: {
+        flex: 1,
+        width: '100%',
+    },
+    sectionMarginTop: {
+        marginTop: 16,
+    },
+    ownerBadge: {
+        backgroundColor: '#4CAF50',
+    },
+    tenantBadge: {
+        backgroundColor: '#2196F3',
     },
 });
 

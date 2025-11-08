@@ -1,5 +1,4 @@
-import { POST } from "../../../constants/api";
-import { MakeApiRequest } from "../../../services/apiService";
+import { apiVerifyPhoneOTP } from "../../../services/apiServiceWrapper";
 import { OTP_VERIFY } from "../../../services/httpService";
 import * as types from "../../actionType";
 
@@ -8,11 +7,8 @@ export const otpVarifyAction = (credentials: { countryCode: string; phoneNumber:
 
       try {
         dispatch(otpVarifyRequest(credentials));
-        const response = await MakeApiRequest({
-          apiUrl: OTP_VERIFY,
-          apiMethod: POST,
-          apiData: credentials,
-        });
+        // Use enhanced API wrapper with mock support
+        const response = await apiVerifyPhoneOTP(OTP_VERIFY, credentials);
         dispatch(otpVarifySuccess(response.data));
         return response
       } catch (error: any) {

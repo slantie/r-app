@@ -74,7 +74,7 @@ def jscFlavor = 'io.github.react-native-community:jsc-android:2026004.+'
 
 apply from: new File(["node", "--print", "require.resolve('@sentry/react-native/package.json')"].execute().text.trim(), "../sentry.gradle")
 android {
-    ndkVersion rootProject.ext.ndkVersion
+//    ndkVersion rootProject.ext.ndkVersion
     buildToolsVersion rootProject.ext.buildToolsVersion
     compileSdk rootProject.ext.compileSdkVersion
 
@@ -90,7 +90,7 @@ android {
         externalNativeBuild {
             cmake {
                 cppFlags "-std=c++17"
-                arguments "-DANDROID_STL=c++_shared"
+//                arguments "-DANDROID_STL=c++_shared"
             }
         }
 
@@ -127,6 +127,12 @@ android {
             proguardFiles getDefaultProguardFile("proguard-android.txt"), "proguard-rules.pro"
             buildConfigField "boolean", "DEBUG_NETWORK", "false"
         }
+    }
+    packagingOptions {
+        pickFirst 'lib/x86/libc++_shared.so'
+        pickFirst 'lib/x86_64/libc++_shared.so'
+        pickFirst 'lib/armeabi-v7a/libc++_shared.so'
+        pickFirst 'lib/arm64-v8a/libc++_shared.so'
     }
 }
 

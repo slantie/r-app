@@ -1,6 +1,4 @@
-import { useSelector } from "react-redux";
-import { POST } from "../../../constants/api";
-import { MakeApiRequest } from "../../../services/apiService";
+import { apiSubmitTerritoryDetails } from "../../../services/apiServiceWrapper";
 import * as types from "../../actionType";
 import { TERRITORY } from "../../../services/httpService";
 
@@ -8,11 +6,8 @@ export const territorySubmissionAction = (payload: any) => {
     return async (dispatch: any) => {
       try {
         dispatch(territorySubmissionRequest(payload));
-        const response = await MakeApiRequest({
-          apiUrl: TERRITORY,
-          apiMethod: POST,
-          apiData: payload,
-        });
+        // Use enhanced API wrapper with mock support
+        const response = await apiSubmitTerritoryDetails(TERRITORY, payload);
         console.log("Territory submission response:", response.data);
         dispatch(territorySubmissionSuccess(response.data));
         return response;

@@ -9,21 +9,18 @@ import {
   whoAmIAction,
 } from '../../store/actions/auth/whoAmIAction';
 import {
-  selectWhoAmIData,
+  // selectWhoAmIData,
   selectWhoAmILoading,
-  selectWhoAmIError,
+  // selectWhoAmIError,
 } from '../../store/selectors/auth';
 import PrefManager from '../../utils/prefManager';
 import { setAuthToken } from '../../store/actions/auth/loginAction';
 
 const WhoAmI = ({ route, navigation }: any) => {
   const dispatch = useDispatch();
-  const whoAmIData = useSelector(selectWhoAmIData);
   const loading = useSelector(selectWhoAmILoading);
-  const error = useSelector(selectWhoAmIError);
 
   const [selectedOption, setSelectedOption] = useState('');
-  const [selectedJobRole, setSelectedJobRole] = useState('');
 
   // // Handle API response
   // useEffect(() => {
@@ -67,73 +64,18 @@ const WhoAmI = ({ route, navigation }: any) => {
   //     };
   // }, [dispatch]);
 
+  // Resident & Security Guard Identity Options
   const options = [
-    { label: 'Land Owner', value: 'Land Owner' },
-    { label: 'Real Estate Developer', value: 'Real Estate Developer' },
-    {
-      label: 'Architect / Design Consultant',
-      value: 'Architect / Design Consultant',
-    },
-    { label: 'Civil / MEP Contractor', value: 'Civil / MEP Contractor' },
-    {
-      label: 'Project Management Consultant (PMC)',
-      value: 'Project Management Consultant (PMC)',
-    },
-    { label: 'Legal / RERA Consultant', value: 'Legal / RERA Consultant' },
-    { label: 'CA / Financial Advisor', value: 'CA / Financial Advisor' },
-    { label: 'Channel Partner / Broker', value: 'Channel Partner / Broker' },
-    { label: 'Digital Marketing Agency', value: 'Digital Marketing Agency' },
-    { label: 'Interior Designer', value: 'Interior Designer' },
-    {
-      label: 'Investor / Investment Firm',
-      value: 'Investor / Investment Firm',
-    },
-    { label: 'Technology Provider', value: 'Technology Provider' },
-    {
-      label: 'Material / Product Supplier',
-      value: 'Material / Product Supplier',
-    },
-    {
-      label: 'Facility Management / Property Ops',
-      value: 'Facility Management / Property Ops',
-    },
-    { label: 'New Entrants / Explorer', value: 'New Entrants / Explorer' },
-    {
-      label: 'Working Professionals (Job in Real Estate)',
-      value: 'Working Professionals (Job in Real Estate)',
-    },
-  ];
-
-  const jobRoles = [
-    { label: 'Land Acquisition', value: 'Land Acquisition' },
-    { label: 'Design / Project Planning', value: 'Design / Project Planning' },
-    { label: 'Legal / Compliance', value: 'Legal / Compliance' },
-    { label: 'Sales', value: 'Sales' },
-    { label: 'Marketing / Branding', value: 'Marketing / Branding' },
-    { label: 'CRM / Customer', value: 'CRM / Customer' },
-    { label: 'Finance & Accounts', value: 'Finance & Accounts' },
-    { label: 'Strategy & Investments', value: 'Strategy & Investments' },
-    { label: 'Site Execution', value: 'Site Execution' },
-    { label: 'Liaisoning', value: 'Liaisoning' },
-    { label: 'IT / Automation', value: 'IT / Automation' },
-    { label: 'HR / Admin', value: 'HR / Admin' },
-    {
-      label: 'Leasing & Asset Management',
-      value: 'Leasing & Asset Management',
-    },
-    { label: 'Investor Relations', value: 'Investor Relations' },
+    { label: 'Owner', value: 'Owner' },
+    { label: 'Tenant', value: 'Tenant' },
+    { label: 'Family Member', value: 'Family Member' },
+    { label: 'Security Guard', value: 'Security Guard' },
+    { label: 'Guest', value: 'Guest' },
+    { label: 'Visitor', value: 'Visitor' },
   ];
 
   const handleOptionSelect = (option: string) => {
     setSelectedOption(option);
-    // Reset job role when a different option is selected
-    if (option !== 'Working Professionals (Job in Real Estate)') {
-      setSelectedJobRole('');
-    }
-  };
-
-  const handleJobRoleSelect = (jobRole: string) => {
-    setSelectedJobRole(jobRole);
   };
 
   const handleSubmit = async () => {
@@ -142,20 +84,9 @@ const WhoAmI = ({ route, navigation }: any) => {
       return;
     }
 
-    if (
-      selectedOption === 'Working Professionals (Job in Real Estate)' &&
-      !selectedJobRole
-    ) {
-      Alert.alert('Error', 'Please select your job role');
-      return;
-    }
-
     const payload = {
       identitySelection: selectedOption,
-      workingProfessionals:
-        selectedOption === 'Working Professionals (Job in Real Estate)'
-          ? selectedJobRole
-          : '',
+      workingProfessionals: '',
       sourceName: 'Digital',
       subSourceName: 'App',
     };
@@ -230,35 +161,15 @@ const WhoAmI = ({ route, navigation }: any) => {
             value={selectedOption}
             placeholder="Select your identity"
             onChange={handleOptionSelect}
-            // dropdownPosition="bottom"
             dropdownStyle={styles.dropdownStyle}
           />
         </View>
-
-        {/* Job Role Dropdown - Only show when Working Professionals is selected */}
-        {selectedOption === 'Working Professionals (Job in Real Estate)' && (
-          <View style={styles.dropdownContainer}>
-            <DropDowns
-              data={jobRoles}
-              value={selectedJobRole}
-              placeholder="Select your job role"
-              onChange={handleJobRoleSelect}
-              //   dropdownPosition="bottom"
-              dropdownStyle={styles.dropdownStyle}
-            />
-          </View>
-        )}
       </View>
-      <View style={{ alignItems: 'center', bottom: 10, alignSelf: 'center' }}>
+      <View style={styles.buttonContainer}>
         <CustomButton
           title={loading ? 'Submitting...' : 'Continue'}
           onPress={handleSubmit}
-          disabled={
-            loading ||
-            !selectedOption ||
-            (selectedOption === 'Working Professionals (Job in Real Estate)' &&
-              !selectedJobRole)
-          }
+          disabled={loading || !selectedOption}
           loading={loading}
         />
       </View>
@@ -275,6 +186,11 @@ const styles = StyleSheet.create({
     borderBottomWidth: 1,
     borderBottomColor: COLORS.BORDER_GREY,
     borderWidth: 0,
+  },
+  buttonContainer: {
+    alignItems: 'center',
+    bottom: 10,
+    alignSelf: 'center',
   },
 });
 

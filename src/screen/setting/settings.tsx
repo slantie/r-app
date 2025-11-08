@@ -1,27 +1,40 @@
 import React from 'react';
-import { View, Text, TouchableOpacity, Image, ScrollView } from 'react-native';
+import { View, Text, TouchableOpacity, Image, ScrollView, Alert } from 'react-native';
 import LinearGradient from 'react-native-linear-gradient';
 import { SettingStyles } from './styles';
 import { getInitials } from '../../utils/method';
-import { COLORS, IMAGES } from '../../constants';
+import { IMAGES } from '../../constants';
 import { Container, HeaderComponent } from '../../components/common';
 import { useSelector } from 'react-redux';
 
-const Setting = (props: any) => {
+interface SettingProps {
+  navigation: {
+    navigate: (screen: string) => void;
+    goBack: () => void;
+  };
+}
+
+const Setting: React.FC<SettingProps> = (props) => {
   const { userData } = useSelector((state: any) => state.otp);
 
-  // Static display data
-  const staticFirstName = 'John';
-  const staticLastName = 'Doe';
-  const staticDisplayName = 'John Doe';
-  const staticPhoneNumber = userData?.phoneNumber || '9988776655';
+  // Resident display data from actual user
+  const staticFirstName = userData?.firstName || 'Slantie';
+  const staticLastName = userData?.lastName || 'Hacks';
+  const staticDisplayName = `${userData?.firstName || 'Slantie'} ${userData?.lastName || 'Hacks'}`;
+  const staticPhoneNumber = userData?.phoneNumber || '7567600101';
   const staticCountryCode = userData?.countryCode || '+91';
+  const staticEmail = userData?.email || 'slantiehacks@gmail.com';
+  
+  const unitInfo = 'A-101, Shivalik Heights';
+  // In a real app, this would come from user data/API
+  const [residentType] = React.useState<'Owner' | 'Tenant'>('Tenant');
+  const memberSince = 'January 2024';
 
   return (
     <Container>
       <View style={SettingStyles.container}>
         <HeaderComponent
-          Title="Profiles"
+          Title="My Profile"
           onPress={() => {
             props.navigation.goBack();
           }}
@@ -36,7 +49,7 @@ const Setting = (props: any) => {
             style={SettingStyles.card}
           >
             <TouchableOpacity
-              style={{ paddingVertical: 20, paddingHorizontal: 20 }}
+              style={SettingStyles.profileCardTouch}
               onPress={() => {
                 props.navigation.navigate('Profile');
               }}
@@ -54,33 +67,77 @@ const Setting = (props: any) => {
                   <View style={SettingStyles.phoneContainer}>
                     <Text style={SettingStyles.phoneText}>{staticCountryCode} {staticPhoneNumber}</Text>
                   </View>
+                  <Text style={SettingStyles.profileEmail}>
+                    {staticEmail}
+                  </Text>
                 </View>
               </View>
             </TouchableOpacity>
           </LinearGradient>
-          <ScrollView showsVerticalScrollIndicator={false} style={{ flex: 1, width: "100%" }}>
 
-            {/* Menu Items */}
-            <View style={[SettingStyles.section, { marginTop: 16 }]}>
+          <View style={SettingStyles.unitInfoCard}>
+            <Text style={SettingStyles.unitLabel}>MY UNIT</Text>
+            <Text style={SettingStyles.unitText}>
+              {unitInfo}
+            </Text>
+            <View style={SettingStyles.badgeRow}>
+              <View style={[SettingStyles.residentBadge, residentType === 'Owner' ? SettingStyles.ownerBadge : SettingStyles.tenantBadge]}>
+                <Text style={SettingStyles.badgeText}>
+                  {residentType.toUpperCase()}
+                </Text>
+              </View>
+              <Text style={SettingStyles.memberSinceText}>
+                Member since {memberSince}
+              </Text>
+            </View>
+          </View>
+
+          <ScrollView showsVerticalScrollIndicator={false} style={SettingStyles.scrollView}>
+
+            <View style={SettingStyles.sectionMarginTop}>
               <TouchableOpacity
                 style={SettingStyles.menuItem}
-                onPress={() => { props.navigation.navigate('PersonalDetails') }}>
-                <Text style={SettingStyles.menuText}>Personal Details</Text>
+                onPress={() => { 
+                  Alert.alert('Coming Soon', 'Family members management will be available soon.');
+                }}>
+                <View style={SettingStyles.menuItemLeft}>
+                  <Text style={SettingStyles.menuIcon}>👥</Text>
+                  <Text style={SettingStyles.menuText}>Family Members</Text>
+                </View>
                 <Image source={IMAGES.BACK} style={SettingStyles.chevron} />
               </TouchableOpacity>
-
             </View>
-            <View style={[SettingStyles.section, { marginTop: 0 }]}>
+
+            <View style={SettingStyles.section}>
               <TouchableOpacity
                 style={SettingStyles.menuItem}
-                onPress={() => { props.navigation.navigate('ProfessionalDetails') }}>
-                <Text style={SettingStyles.menuText}>Professional Details</Text>
+                onPress={() => { 
+                  Alert.alert('Coming Soon', 'Vehicle management will be available soon.');
+                }}>
+                <View style={SettingStyles.menuItemLeft}>
+                  <Text style={SettingStyles.menuIcon}>🚗</Text>
+                  <Text style={SettingStyles.menuText}>My Vehicles</Text>
+                </View>
+                <Image source={IMAGES.BACK} style={SettingStyles.chevron} />
+              </TouchableOpacity>
+            </View>
+
+            <View style={SettingStyles.section}>
+              <TouchableOpacity
+                style={SettingStyles.menuItem}
+                onPress={() => { 
+                  Alert.alert('Coming Soon', 'Document management will be available soon.');
+                }}>
+                <View style={SettingStyles.menuItemLeft}>
+                  <Text style={SettingStyles.menuIcon}>📄</Text>
+                  <Text style={SettingStyles.menuText}>My Documents</Text>
+                </View>
                 <Image source={IMAGES.BACK} style={SettingStyles.chevron} />
               </TouchableOpacity>
             </View>
 
             {/* Action Buttons */}
-            <View style={[SettingStyles.section, { marginTop: 0 }]}>
+            <View style={SettingStyles.section}>
               <TouchableOpacity
                 style={SettingStyles.menuItem}
                 onPress={() => { props.navigation.navigate('ProfileSetting') }}>

@@ -1,5 +1,4 @@
-import { POST } from "../../../constants/api";
-import { MakeApiRequest } from "../../../services/apiService";
+import { apiResendOTP } from "../../../services/apiServiceWrapper";
 import { RESEND_OTP } from "../../../services/httpService";
 import * as types from "../../actionType";
 
@@ -7,11 +6,8 @@ export const resendOTPAction = (credentials: { countryCode: string; phoneNumber:
     return async (dispatch: any) => {
       try {
         dispatch(resendOTPRequest(credentials));
-        const response = await MakeApiRequest({
-          apiUrl: RESEND_OTP,
-          apiMethod: POST,
-          apiData: credentials,
-        });
+        // Use enhanced API wrapper with mock support
+        const response = await apiResendOTP(RESEND_OTP, credentials);
         dispatch(resendOTPSuccess(response.data));
         return response
       } catch (error: any) {

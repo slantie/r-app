@@ -1,252 +1,235 @@
 import React, { useEffect } from 'react';
-import { View, Text, FlatList, TouchableOpacity, Alert, Linking, StatusBar, Platform, PermissionsAndroid } from 'react-native';
+import { View, Text, FlatList, TouchableOpacity, Alert, ScrollView } from 'react-native';
 import { useDispatch, useSelector } from 'react-redux';
 import { HomeStyles } from './styles';
 import Container from '../../components/common/container';
 import Images from '../../constants/images';
 import { Image } from 'react-native';
-import { COLORS, FF, FS } from '../../constants';
 import { userDetailAction } from '../../store/actions/auth/userDetailAction';
 import { selectUserDetailData } from '../../store/selectors/auth';
-import { Camera } from 'react-native-vision-camera';
-import Geolocation from 'react-native-geolocation-service';
 
-const Home = (props: any) => {
-  const dispatch = useDispatch() as any;
-  const { userData } = useSelector((state: any) => state.otp);
-  const userName = userData?.firstName;
+interface QuickActionItem {
+  id: string;
+  label: string;
+  icon: string;
+  screen?: string;
+  image: ReturnType<typeof require>;
+}
+
+interface NoticePreview {
+  id: string;
+  title: string;
+  priority: 'urgent' | 'important' | 'normal';
+  date: string;
+}
+
+interface HomeProps {
+  navigation: {
+    navigate: (screen: string) => void;
+  };
+}
+
+const Home: React.FC<HomeProps> = () => {
+  const dispatch = useDispatch();
+  const { userData } = useSelector((state: { otp: { userData: { firstName?: string; lastName?: string } } }) => state.otp);
+  const userName = userData?.firstName || 'Resident';
   const userDetailData = useSelector(selectUserDetailData);
   const user = userDetailData?.data?.result;
 
+  const unitInfo = 'A-101, Shivalik Heights';
+  const maintenanceDue = '₹5,000';
+  const pendingComplaints = 1;
+  const upcomingBookings = 2;
 
-  const userDetailsApi = () => {
-    dispatch(userDetailAction()).then((res: any) => {
-      console.log('User Details API Response', res);
-    });
-  }
+  const userDetailsApi = React.useCallback(() => {
+    dispatch(userDetailAction() as never);
+  }, [dispatch]);
 
   useEffect(() => {
-    if(user == undefined){
+    if (user === undefined) {
       userDetailsApi();
     }
-  }, []);
+  }, [user, userDetailsApi]);
 
-  useEffect(() => {
-    console.log('User is Employee', user?.isEmployee);
-    console.log('User ID', user?._id);
+  // Latest notice preview
+  const latestNotice: NoticePreview = {
+    id: '1',
+    title: 'Water Supply Disruption Tomorrow',
+    priority: 'urgent',
+    date: 'Nov 9, 2025',
+  };
 
-
-    if (user?.isEmployee && user?._id) {
-      // employeeDetailsApi();
-      console.log('Employee Details API Called');
-
-    }
-
-  }, [user?.isEmployee, user?._id]);
-
-  // Function to request camera permission
-  const requestCameraPermission = async (): Promise<boolean> => {
-    try {
-      const permission = await Camera.requestCameraPermission();
-      if (permission === 'granted') {
-        return true;
-      } else if (permission === 'denied') {
-        Alert.alert(
-          'Camera Permission Required',
-          'Camera access is required for attendance. Please grant camera permission.',
-          [{ text: 'OK' }]
-        );
-        return false;
-      }
-      return false;
-    } catch (error) {
-      console.error('Camera permission error:', error);
-      Alert.alert('Error', 'Unable to request camera permission.');
-      return false;
+  const getPriorityColor = (priority: string): string => {
+    switch (priority) {
+      case 'urgent':
+        return '#F44336';
+      case 'important':
+        return '#FF9800';
+      default:
+        return '#4CAF50';
     }
   };
 
-  // Function to request location permission
-  const requestLocationPermissionForAttendance = async (): Promise<boolean> => {
-    try {
-      let granted = false;
-
-      if (Platform.OS === 'android') {
-        const permission = await PermissionsAndroid.request(
-          PermissionsAndroid.PERMISSIONS.ACCESS_FINE_LOCATION,
-          {
-            title: 'Location Permission',
-            message: 'This app needs access to your location for attendance verification.',
-            buttonNeutral: 'Ask Me Later',
-            buttonNegative: 'Cancel',
-            buttonPositive: 'OK',
-          }
-        );
-        granted = permission === PermissionsAndroid.RESULTS.GRANTED;
-      } else if (Platform.OS === 'ios') {
-        const permission = await Geolocation.requestAuthorization('whenInUse');
-        granted = permission === 'granted';
-      }
-
-      if (!granted) {
-        Alert.alert(
-          'Location Permission Required',
-          'Location access is required for attendance. Please grant location permission.',
-          [{ text: 'OK' }]
-        );
-      }
-
-      return granted;
-    } catch (error) {
-      console.error('Location permission error:', error);
-      Alert.alert('Error', 'Unable to request location permission.');
-      return false;
-    }
-  };
-
-  const homeMenuItems = [
+  // Resident Quick Actions (8 items)
+  const quickActions: QuickActionItem[] = [
     {
-      label: 'Desk',
-      image: Images.FOLLOW_UP,
-    },
-    {
-      label: 'Project',
-      image: Images.PROJECT,
-    },
-    {
-      label: 'Pulses',
-      image: Images.PLUSES,
-    },
-    {
-      label: 'Feedback',
+      id: '1',
+      label: 'Complaints',
+      icon: '🛠️',
       image: Images.FEEDBACK,
     },
     {
-      label: 'Network',
+      id: '2',
+      label: 'Amenities',
+      icon: '🏊',
+      image: Images.CALENDAR,
+    },
+    {
+      id: '3',
+      label: 'Visitors',
+      icon: '👥',
       image: Images.CONTACT,
     },
-    // {
-    //   label: 'Terrotory',
-    //   image: Images.TERROTORY,
-    // },
-    // {
-    //   label: 'R - ID',
-    //   image: Images.RIDES,
-    // },
-    // {
-    //   label: 'Setting',
-    //   image: Images.SETTINGS,
-    // },
-    // {
-    //   label: 'Punch System',
-    //   image: Images.PUNCH_SYSTEM,
-    // },
-    // {
-    //   label: 'Land',
-    //   image: Images.LAND,
-    // },
     {
-      label: 'Territory',
-      image: Images.TERRITORY,
+      id: '4',
+      label: 'Parking',
+      icon: '🚗',
+      image: Images.LOCATION,
+    },
+    {
+      id: '5',
+      label: 'Maintenance',
+      icon: '💰',
+      image: Images.PROJECT,
+    },
+    {
+      id: '6',
+      label: 'Gallery',
+      icon: '📸',
+      image: Images.GALLARY,
+    },
+    {
+      id: '7',
+      label: 'Gate Pass',
+      icon: '🚪',
+      image: Images.SCANNER,
+    },
+    {
+      id: '8',
+      label: 'Help',
+      icon: '📞',
+      image: Images.CALL,
     },
   ];
 
-  const renderItem = ({ item }: any) => {
+  const renderQuickAction = ({ item }: { item: QuickActionItem }) => {
     return (
       <TouchableOpacity
         activeOpacity={0.8}
-        style={[HomeStyles.menuItem]}
+        style={HomeStyles.menuItem}
         onPress={() => {
-          if (item.label === 'Setting') {
-            props.navigation.navigate('Setting');
-          } else if (item.label === 'Network') {
-            props.navigation.navigate('Contact');
-          }
-          else if (item.label === 'Pulses') {
-            props.navigation.navigate('Pluses');
-          } else if (item.label === 'Feedback') {
-            props.navigation.navigate('Feedback');
-          } else if (item.label === 'Project') {
-            props.navigation.navigate('Project');
-          }
-          else if (item.label === 'R - ID') {
-            props.navigation.navigate('Profile');
-          }
-          else if (item.label === 'Punch System') {
-            props.navigation.navigate('PunchSystem');
-          }
-          else if (item.label === 'Desk') {
-            props.navigation.navigate('Desk');
-          }
-
-          else {
-            Alert.alert(
-              'Coming Soon',
-              'We’ll be introducing this feature soon.',
-              [{ text: 'OK' }]
-            );
-          }
+          Alert.alert(
+            'Coming Soon',
+            `${item.label} feature will be available soon.`,
+            [{ text: 'OK' }]
+          );
         }}
       >
-        <Image source={item.image} style={[HomeStyles.menuIcon]} />
+        <Image source={item.image} style={HomeStyles.menuIcon} />
         <Text style={HomeStyles.menuLabel}>{item.label}</Text>
       </TouchableOpacity>
     );
   };
 
-
-
   return (
     <Container>
+      <ScrollView showsVerticalScrollIndicator={false}>
+        <View style={HomeStyles.header}>
+          <Text style={HomeStyles.headerTitle}>
+            Hello, {userName}
+          </Text>
+          <Text style={HomeStyles.headerSubtitle}>
+            {unitInfo}
+          </Text>
+        </View>
 
-      <View>
-        <Text style={{ fontSize: FS.FS22, color: COLORS.BLACK, fontFamily: FF[500],marginTop:40 }}>Hello, {userName}</Text>
-        <Text style={{ fontSize: FS.FS16, color: COLORS.GREY_TEXT, fontFamily: FF[400],marginTop:16,letterSpacing:0.1 }}>Welcome to R</Text>
-      </View>
-      <View
-        style={{
-          alignItems: 'center',
-          justifyContent: 'center',
-          flex: 1,
-          marginTop: 40,
-        }}
-      >
-        <FlatList
-          data={homeMenuItems}
-          renderItem={renderItem}
-          numColumns={3}
-          contentContainerStyle={HomeStyles.menuGrid}
-          columnWrapperStyle={{}}
-          showsVerticalScrollIndicator={false}
-        />
+        <TouchableOpacity
+          style={[HomeStyles.noticeCard, { borderLeftColor: getPriorityColor(latestNotice.priority) }]}
+          onPress={() => {
+            Alert.alert(
+              '📢 Latest Notice',
+              'Water supply will be interrupted tomorrow from 10:00 AM to 2:00 PM for tank cleaning.',
+              [{ text: 'OK' }]
+            );
+          }}
+        >
+          <View style={HomeStyles.noticeCardRow}>
+            <View style={HomeStyles.noticeCardContent}>
+              <Text style={HomeStyles.noticeLabel}>
+                📢 LATEST ANNOUNCEMENT
+              </Text>
+              <Text style={HomeStyles.noticeTitle}>
+                {latestNotice.title}
+              </Text>
+              <Text style={HomeStyles.noticeDate}>
+                {latestNotice.date}
+              </Text>
+            </View>
+            <Image source={Images.ARROW} style={HomeStyles.noticeArrow} />
+          </View>
+        </TouchableOpacity>
 
+        <View style={HomeStyles.section}>
+          <Text style={HomeStyles.sectionTitle}>
+            ⚡ Quick Actions
+          </Text>
+          <FlatList
+            data={quickActions}
+            renderItem={renderQuickAction}
+            keyExtractor={(item) => item.id}
+            numColumns={4}
+            scrollEnabled={false}
+            columnWrapperStyle={HomeStyles.columnWrapper}
+          />
+        </View>
 
+        <View style={HomeStyles.section}>
+          <Text style={HomeStyles.sectionTitle}>
+            📊 My Stats
+          </Text>
+          
+          <View style={HomeStyles.statsCard}>
+            <View style={HomeStyles.statRow}>
+              <Text style={HomeStyles.statLabel}>
+                💰 Maintenance Due
+              </Text>
+              <Text style={HomeStyles.statValueRed}>
+                {maintenanceDue}
+              </Text>
+            </View>
 
-      </View>
+            <View style={HomeStyles.statRow}>
+              <Text style={HomeStyles.statLabel}>
+                🛠️ Pending Complaints
+              </Text>
+              <Text style={HomeStyles.statValueOrange}>
+                {pendingComplaints}
+              </Text>
+            </View>
+
+            <View style={HomeStyles.statRowLast}>
+              <Text style={HomeStyles.statLabel}>
+                📅 Upcoming Bookings
+              </Text>
+              <Text style={HomeStyles.statValueGreen}>
+                {upcomingBookings}
+              </Text>
+            </View>
+          </View>
+        </View>
+      </ScrollView>
     </Container>
   );
 };
 
 export default Home;
-{/* paste here */ }
-{/*
-          <CustomDropdownInput
-          placeholder="Select Fruit"
-          data={fruitArray}
-          value={fruit}
-          onChangeText={setFruit}
-          isActive={activeIndex === 0}
-          onFocus={() => setActiveIndex(0)}
-          onClose={() => setActiveIndex(null)}
-        />
-
-<CustomDropdownInput
-          placeholder="Select Berry"
-          data={berryArray}
-          value={berry}
-          onChangeText={setBerry}
-          isActive={activeIndex === 1}
-          onFocus={() => setActiveIndex(1)}
-          onClose={() => setActiveIndex(null)}
-        /> */}
-

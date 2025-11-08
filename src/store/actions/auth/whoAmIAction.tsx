@@ -1,5 +1,4 @@
-import { POST } from "../../../constants/api";
-import { MakeApiRequest } from "../../../services/apiService";
+import { apiWhoAmI } from "../../../services/apiServiceWrapper";
 import { WHO_AM_I } from "../../../services/httpService";
 import * as types from "../../actionType";
 
@@ -8,11 +7,8 @@ export const whoAmIAction = (payload: { identitySelection: string; workingProfes
       console.log("whoAmI payload", payload);
       try {
         dispatch(whoAmIRequest(payload));
-        const response = await MakeApiRequest({
-          apiUrl: WHO_AM_I,
-          apiMethod: POST,
-          apiData: payload,
-        });
+        // Use enhanced API wrapper with mock support
+        const response = await apiWhoAmI(WHO_AM_I, { identityType: payload.identitySelection });
         dispatch(whoAmISuccess(response));
         return response
       } catch (error: any) {

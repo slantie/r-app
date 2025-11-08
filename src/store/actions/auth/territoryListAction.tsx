@@ -1,5 +1,4 @@
-import { GET } from "../../../constants/api";
-import { MakeApiRequest } from "../../../services/apiService";
+import { apiGetTerritoryList } from "../../../services/apiServiceWrapper";
 import { TERRITORYLIST } from "../../../services/httpService";
 import * as types from "../../actionType";
 
@@ -7,11 +6,8 @@ export const territoryListAction = (params?: { page?: number; limit?: number }) 
     return async (dispatch: any) => {
         try {
             dispatch(territoryListRequest());
-            const response = await MakeApiRequest({
-                apiUrl: TERRITORYLIST,
-                apiMethod: GET,
-                apiParams: params || { page: 1 },
-            });
+            // Use enhanced API wrapper with mock support
+            const response = await apiGetTerritoryList(TERRITORYLIST, params || { page: 1 });
             dispatch(territoryListSuccess(response));
             return response;
         } catch (error: any) {

@@ -1,5 +1,4 @@
-import { POST } from "../../../constants/api";
-import { MakeApiRequest } from "../../../services/apiService";
+import { apiSendPhoneOTP } from "../../../services/apiServiceWrapper";
 import { LOGIN } from "../../../services/httpService";
 import * as types from "../../actionType";
 
@@ -8,11 +7,8 @@ export const loginAction = (credentials: { countryCode: string; phoneNumber: str
       console.log("credentials",credentials);
       try {
         dispatch(loginRequest(credentials));
-        const response = await MakeApiRequest({
-          apiUrl: LOGIN,
-          apiMethod: POST,
-          apiData: credentials,
-        });
+        // Use enhanced API wrapper with mock support
+        const response = await apiSendPhoneOTP(LOGIN, credentials);
         dispatch(loginSuccess(response));
         return response
       } catch (error: any) {
