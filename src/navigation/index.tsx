@@ -13,6 +13,7 @@ const RootNavigation = () => {
   const dispatch = useDispatch();
   const { isAuthenticated } = useSelector((state: any) => state.otp);
   const [isLoading, setIsLoading] = useState(true);
+  const [shouldShowAuth, setShouldShowAuth] = useState(true);
 
   useEffect(() => {
     checkAuthStatus();
@@ -25,11 +26,14 @@ const RootNavigation = () => {
       if (token && userData) {
         console.log('✅ Token found, dispatching setAuthToken...');
         dispatch(setAuthToken({ accessToken: token, userData }));
+        setShouldShowAuth(false);
       } else {
-        console.log('❌ No token found');
+        console.log('❌ No token found - showing login screen');
+        setShouldShowAuth(true);
       }
     } catch (error) {
       console.error('Error checking auth status:', error);
+      setShouldShowAuth(true);
     } finally {
       setIsLoading(false);
     }
@@ -48,9 +52,12 @@ const RootNavigation = () => {
     );
   }
 
+  // Show auth screen by default, only show app if explicitly authenticated
+  const showAppStack = !shouldShowAuth && isAuthenticated;
+
   return (
-    <NavigationContainer key={isAuthenticated ? 'authenticated' : 'unauthenticated'}>
-      {isAuthenticated ? (
+    <NavigationContainer key={showAppStack ? 'authenticated' : 'unauthenticated'}>
+      {showAppStack ? (
         <>
           <AppStack />
         </>
