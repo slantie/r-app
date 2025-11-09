@@ -17,18 +17,26 @@ interface SettingProps {
 const Setting: React.FC<SettingProps> = (props) => {
   const { userData } = useSelector((state: any) => state.otp);
 
-  // Resident display data from actual user
-  const staticFirstName = userData?.firstName || 'Slantie';
-  const staticLastName = userData?.lastName || 'Hacks';
-  const staticDisplayName = `${userData?.firstName || 'Slantie'} ${userData?.lastName || 'Hacks'}`;
-  const staticPhoneNumber = userData?.phoneNumber || '7567600101';
-  const staticCountryCode = userData?.countryCode || '+91';
-  const staticEmail = userData?.email || 'slantiehacks@gmail.com';
+  // Extract user data - removed hardcoded fallbacks
+  const firstName = userData?.firstName || 'User';
+  const lastName = userData?.lastName || '';
+  const displayName = `${firstName} ${lastName}`.trim();
+  const phoneNumber = userData?.phoneNumber || '';
+  const countryCode = userData?.countryCode || '+91';
+  const email = userData?.email || '';
+
+  // Extract member/unit data from userData (set during member registration)
+  const member = userData?.member;
+  const isVerified = member?.memberStatus === 'approved';
+  const unitInfo = member 
+    ? `${member.blockName}-${member.unitNumber}` 
+    : 'Not assigned';
+  const residentType = member?.memberType || 'Resident';
   
-  const unitInfo = 'A-101, Shivalik Heights';
-  // In a real app, this would come from user data/API
-  const [residentType] = React.useState<'Owner' | 'Tenant'>('Tenant');
-  const memberSince = 'January 2024';
+  // Format member since date
+  const memberSince = member?.createdAt 
+    ? new Date(member.createdAt).toLocaleDateString('en-US', { month: 'long', year: 'numeric' })
+    : 'Recently joined';
 
   return (
     <Container>
@@ -55,20 +63,28 @@ const Setting: React.FC<SettingProps> = (props) => {
               }}
             >
               <View style={SettingStyles.profileRow}>
-                <View style={SettingStyles.profileAvatar}>
-                  <Text style={SettingStyles.profileAvatarText}>
-                    {getInitials(staticFirstName, staticLastName)}
-                  </Text>
+                <View style={SettingStyles.profileAvatarContainer}>
+                  <View style={SettingStyles.profileAvatar}>
+                    <Text style={SettingStyles.profileAvatarText}>
+                      {getInitials(firstName, lastName)}
+                    </Text>
+                  </View>
+                  {isVerified && (
+                    <View style={SettingStyles.verifiedBadge}>
+                      <Text style={SettingStyles.verifiedBadgeText}>✓</Text>
+                    </View>
+                  )}
                 </View>
                 <View style={SettingStyles.profileInfo}>
                   <Text style={SettingStyles.profileName}>
-                    {staticDisplayName}
+                    {displayName}
+                    {isVerified && ' ✓'}
                   </Text>
                   <View style={SettingStyles.phoneContainer}>
-                    <Text style={SettingStyles.phoneText}>{staticCountryCode} {staticPhoneNumber}</Text>
+                    <Text style={SettingStyles.phoneText}>{countryCode} {phoneNumber}</Text>
                   </View>
                   <Text style={SettingStyles.profileEmail}>
-                    {staticEmail}
+                    {email}
                   </Text>
                 </View>
               </View>

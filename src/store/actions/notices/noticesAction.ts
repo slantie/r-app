@@ -14,9 +14,9 @@ export const MARK_NOTICE_READ_FAILURE = 'MARK_NOTICE_READ_FAILURE';
 export const RESET_NOTICES = 'RESET_NOTICES';
 
 // Action Creators
-export const fetchNotices = (unitId: string) => ({
+export const fetchNotices = (unitId?: string, buildingId?: string) => ({
     type: FETCH_NOTICES,
-    payload: { unitId }
+    payload: { unitId, buildingId }
 });
 
 export const fetchNoticesSuccess = (data: any) => ({

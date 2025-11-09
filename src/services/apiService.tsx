@@ -43,7 +43,7 @@ export async function MakeApiRequest({
   };
 
   print(`${apiMethod} API:`, apiUrl, 1);
-  print('Headers:', JSON.stringify(headers), 1);
+  // print('Headers:', JSON.stringify(headers), 1);
   print('Params:', JSON.stringify(apiParams), 1);
 
   if (apiMethod !== GET) print('Body:', JSON.stringify(apiData), 1);

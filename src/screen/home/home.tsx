@@ -33,7 +33,7 @@ interface HomeProps {
 
 const Home: React.FC<HomeProps> = ({ navigation }) => {
   const dispatch = useDispatch();
-  const { userData } = useSelector((state: { otp: { userData: { firstName?: string; lastName?: string } } }) => state.otp);
+  const { userData } = useSelector((state: { otp: { userData: any } }) => state.otp);
   const userName = userData?.firstName || 'Resident';
   const userDetailData = useSelector(selectUserDetailData);
   const user = userDetailData?.data?.result;
@@ -53,8 +53,9 @@ const Home: React.FC<HomeProps> = ({ navigation }) => {
   }, [user, userDetailsApi]);
 
   // Get unitId from authenticated user data
-  // Extract from user detail data structure
-  const unitId = userDetailData?.data?.result?.unitId ||
+  // Priority: userData.member (from registration) > userDetail API response
+  const unitId = userData?.member?.unitId ||
+                 userDetailData?.data?.result?.unitId ||
                  userDetailData?.data?.result?.unit?._id ||
                  user?.unitId ||
                  user?.unit?._id;
@@ -62,8 +63,11 @@ const Home: React.FC<HomeProps> = ({ navigation }) => {
   // Fetch dashboard data when unitId is available
   useEffect(() => {
     if (unitId) {
+      console.log('📊 Fetching dashboard data for unitId:', unitId);
       dispatch(fetchDashboardData(unitId) as never);
       dispatch(fetchQuickStats(unitId) as never);
+    } else {
+      console.warn('⚠️ No unitId found - cannot fetch dashboard data');
     }
   }, [dispatch, unitId]);
 
@@ -227,8 +231,10 @@ const Home: React.FC<HomeProps> = ({ navigation }) => {
               borderRadius: 8,
             }}
             onPress={() => {
-              dispatch(fetchDashboardData(UNIT_ID) as never);
-              dispatch(fetchQuickStats(UNIT_ID) as never);
+              if (unitId) {
+                dispatch(fetchDashboardData(unitId) as never);
+                dispatch(fetchQuickStats(unitId) as never);
+              }
             }}
           >
             <Text style={{ color: '#fff', fontSize: 16, fontWeight: '600' }}>

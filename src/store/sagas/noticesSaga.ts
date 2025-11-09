@@ -1,6 +1,7 @@
 import { call, put, takeLatest } from 'redux-saga/effects';
 import { MakeApiRequest } from '../../services/apiService';
 import { GET, POST } from '../../constants/api';
+import { SOCIETY_API_URL } from '../../config/environment';
 import {
   FETCH_NOTICES,
   FETCH_NOTICE_DETAILS,
@@ -13,22 +14,32 @@ import {
   markNoticeReadFailure,
 } from '../actions/notices/noticesAction';
 
-const API_BASE_URL = 'http://10.0.2.2:5000/api'; // Android emulator
-// const API_BASE_URL = 'http://localhost:5000/api'; // iOS simulator
-
 // Fetch Notices List
 function* fetchNoticesSaga(action: any): Generator<any, void, any> {
   try {
-    const { unitId } = action.payload;
+    const { unitId, buildingId } = action.payload;
+
+    // Build query params - prefer unitId, fallback to buildingId
+    const params: any = {};
+    if (unitId) {
+      params.unitId = unitId;
+    } else if (buildingId) {
+      params.buildingId = buildingId;
+    }
+
+    console.log('📢 Fetching notices with params:', params);
 
     const response = yield call(MakeApiRequest, {
-      apiUrl: `${API_BASE_URL}/resident/notices`,
+      apiUrl: `${SOCIETY_API_URL}/resident/notices`,
       apiMethod: GET,
-      apiParams: { unitId },
+      apiParams: params,
     });
+
+    console.log('✅ Notices response:', response.data);
 
     yield put(fetchNoticesSuccess(response.data));
   } catch (error: any) {
+    console.error('❌ Fetch notices error:', error);
     yield put(fetchNoticesFailure(error.message || 'Failed to fetch notices'));
   }
 }
@@ -39,7 +50,7 @@ function* fetchNoticeDetailsSaga(action: any): Generator<any, void, any> {
     const { id } = action.payload;
 
     const response = yield call(MakeApiRequest, {
-      apiUrl: `${API_BASE_URL}/resident/notices/${id}`,
+      apiUrl: `${SOCIETY_API_URL}/resident/notices/${id}`,
       apiMethod: GET,
     });
 
@@ -59,7 +70,7 @@ function* markNoticeReadSaga(action: any): Generator<any, void, any> {
     const { id, unitId } = action.payload;
 
     const response = yield call(MakeApiRequest, {
-      apiUrl: `${API_BASE_URL}/resident/notices/${id}/mark-read`,
+      apiUrl: `${SOCIETY_API_URL}/resident/notices/${id}/mark-read`,
       apiMethod: POST,
       apiPayload: { unitId },
     });

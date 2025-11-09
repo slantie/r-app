@@ -16,23 +16,43 @@ const NoticesList: React.FC<NoticesListProps> = ({ navigation }) => {
   const dispatch = useDispatch();
 
   // Get user data from Redux
+  const { userData } = useSelector((state: any) => state.otp);
   const userDetailData = useSelector(selectUserDetailData);
   const user = userDetailData?.data?.result;
-  const unitId = user?.unitId || user?.unit?._id;
+  
+  // Priority: userData.member (from registration) > userDetail API response
+  const unitId = userData?.member?.unitId ||
+                 user?.unitId ||
+                 user?.unit?._id;
+  
+  // Get buildingId as fallback
+  const buildingId = userData?.member?.buildingId ||
+                     user?.buildingId ||
+                     user?.building?._id;
 
   const { loading, notices, error } = useSelector((state: RootState) => state.notices);
   const [refreshing, setRefreshing] = React.useState(false);
 
   useEffect(() => {
     if (unitId) {
+      console.log('📢 Fetching notices for unitId:', unitId);
       dispatch(fetchNotices(unitId) as never);
+    } else if (buildingId) {
+      console.log('📢 Fetching notices for buildingId:', buildingId);
+      dispatch(fetchNotices(undefined, buildingId) as never);
+    } else {
+      console.warn('⚠️ No unitId or buildingId found - cannot fetch notices');
     }
-  }, [dispatch, unitId]);
+  }, [dispatch, unitId, buildingId]);
 
   const onRefresh = () => {
     if (unitId) {
       setRefreshing(true);
       dispatch(fetchNotices(unitId) as never);
+      setTimeout(() => setRefreshing(false), 1000);
+    } else if (buildingId) {
+      setRefreshing(true);
+      dispatch(fetchNotices(undefined, buildingId) as never);
       setTimeout(() => setRefreshing(false), 1000);
     }
   };

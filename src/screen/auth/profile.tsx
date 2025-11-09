@@ -22,6 +22,8 @@ import { commonImageAction } from '../../store/actions/commonImage/imageAction';
 import {
   getImageNameFromUri,
 } from '../../utils/helper';
+import PrefManager from '../../utils/prefManager';
+import { STRING } from '../../constants';
 
 const Profile = ({ route, navigation }: any) => {
   const dispatch = useDispatch() as any;
@@ -206,45 +208,73 @@ const Profile = ({ route, navigation }: any) => {
   };
 
   const submitProfileWithImage = async (imageFileName: string) => {
-    const profilePayload = {
-      firstName: firstName.trim(),
-      lastName: lastName.trim(),
-      email: email.trim(),
-      profileImage: imageFileName || undefined,
-    };
-
-    console.log('Submitting profile with payload:', profilePayload);
-
-    const profileResponse = await profileApiCall(profilePayload);
-    console.log('profileResponse', profileResponse);
-
-    if (profileResponse.status === 200) {
-      console.log('Profile submission successful');
-      const userData = profileResponse.data.result;
-
-      // First check if identitySelection is empty
-      if (!userData.identitySelection || userData.identitySelection === '') {
-        // Identity not selected - navigate to WhoAmI screen
-        console.log('🆔 Identity not selected - moving to WhoAmI screen');
-        navigation.navigate('WhoAmI', { userData });
-      } else {
-        // Identity is selected - check territory submission status
-        if (userData.isTerritorySubmit) {
-          // Both profile and territory are completed - login successful
-          console.log('✅ Profile and Territory both completed - logging in');
-          // Navigate to main app or show success
-          Alert.alert('Success', 'Profile updated successfully!', [
-            { text: 'OK', onPress: () => navigation.goBack() },
-          ]);
-        } else {
-          // Profile submitted but territory not submitted - move to territory step
-          console.log('📍 Profile submitted - moving to territory setup');
-          navigation.navigate('Territory', { userData });
-        }
+    try {
+      // Get userData from storage to get userId
+      const userDataStr = await PrefManager.getValue('userData');
+      const userData = userDataStr ? JSON.parse(userDataStr) : route.params?.userData;
+      
+      if (!userData || !userData._id) {
+        Alert.alert('Error', 'User data not found. Please login again.');
+        return;
       }
-    } else {
-      console.log('Profile submission failed');
-      Alert.alert('Error', 'Failed to submit profile. Please try again.');
+
+      const profilePayload = {
+        userId: userData._id,  // Required by new API
+        firstName: firstName.trim(),
+        lastName: lastName.trim(),
+        email: email.trim(),
+        gender: 'Male', // TODO: Add gender selection in UI
+        // profileImage: imageFileName || undefined,  // TODO: Re-enable after testing
+      };
+
+      console.log('Submitting profile with payload:', profilePayload);
+
+      const profileResponse = await profileApiCall(profilePayload);
+      console.log('profileResponse', profileResponse);
+
+      if (profileResponse.status === 200) {
+        console.log('Profile submission successful');
+        // New API structure: response.data = { success, message, data: {...} }
+        const apiData = profileResponse.data?.data || profileResponse.data?.result;
+
+        // Update stored token and userData
+        await PrefManager.setValue(STRING.TOKEN, apiData.accessToken);
+        await PrefManager.setValue('userData', JSON.stringify({
+          ...apiData.user,
+          accessToken: apiData.accessToken,
+          isProfileComplete: apiData.isProfileComplete,
+          isMemberRegistered: apiData.isMemberRegistered,
+          memberStatus: apiData.memberStatus,
+        }));
+
+        console.log('✅ Profile updated successfully');
+        console.log('  - Profile Complete:', apiData.isProfileComplete);
+        console.log('  - Member Registered:', apiData.isMemberRegistered);
+
+        // Navigate to building selection (WhoAmI screen)
+        Alert.alert('Success', 'Profile updated successfully!', [
+          {
+            text: 'Next',
+            onPress: () => navigation.navigate('WhoAmI', {
+              userData: {
+                ...apiData.user,
+                accessToken: apiData.accessToken,
+                isProfileComplete: apiData.isProfileComplete,
+                isMemberRegistered: apiData.isMemberRegistered,
+              }
+            })
+          },
+        ]);
+      } else {
+        console.log('Profile submission failed');
+        Alert.alert('Error', 'Failed to submit profile. Please try again.');
+      }
+    } catch (error: any) {
+      console.log('Profile update error:', error.response?.data);
+      Alert.alert(
+        'Error',
+        error.response?.data?.message || 'Failed to update profile. Please try again.'
+      );
     }
   };
 

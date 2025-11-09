@@ -43,6 +43,10 @@ const SettingStyles = StyleSheet.create({
         flexDirection: 'row',
         alignItems: 'center',
     },
+    profileAvatarContainer: {
+        position: 'relative',
+        marginRight: 16,
+    },
     profileAvatar: {
         width: 60,
         height: 60,
@@ -50,7 +54,24 @@ const SettingStyles = StyleSheet.create({
         backgroundColor: COLORS.GREY_TEXT,
         alignItems: 'center',
         justifyContent: 'center',
-        marginRight: 16,
+    },
+    verifiedBadge: {
+        position: 'absolute',
+        bottom: 0,
+        right: 0,
+        width: 20,
+        height: 20,
+        borderRadius: 10,
+        backgroundColor: '#1DA1F2',
+        alignItems: 'center',
+        justifyContent: 'center',
+        borderWidth: 2,
+        borderColor: COLORS.WHITE,
+    },
+    verifiedBadgeText: {
+        color: COLORS.WHITE,
+        fontSize: 12,
+        fontFamily: FF[700],
     },
     profileAvatarText: {
         color: COLORS.WHITE,

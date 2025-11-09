@@ -1,111 +1,114 @@
-import React from 'react';
-import { View, Text, FlatList, TouchableOpacity, StyleSheet, Alert } from 'react-native';
+import React, { useEffect } from 'react';
+import { View, Text, FlatList, TouchableOpacity, StyleSheet, ActivityIndicator } from 'react-native';
+import { useDispatch, useSelector } from 'react-redux';
 import { Container } from '../../components/common';
 import { COLORS, FF, FS } from '../../constants';
-
-interface NoticeItem {
-  id: string;
-  title: string;
-  category: string;
-  priority: 'urgent' | 'important' | 'normal';
-  description: string;
-  publishDate: string;
-  expiryDate: string;
-  hasReadMore: boolean;
-}
+import { RootState } from '../../store/reducers';
+import { fetchNotices } from '../../store/actions/notices/noticesAction';
+import { selectUserDetailData } from '../../store/selectors/auth';
 
 interface CommunityProps {
   navigation: {
-    navigate: (screen: string) => void;
+    navigate: (screen: string, params?: any) => void;
   };
 }
 
-const Community: React.FC<CommunityProps> = () => {
+const Community: React.FC<CommunityProps> = ({ navigation }) => {
+  const dispatch = useDispatch();
 
-  const noticesData: NoticeItem[] = [
-    {
-      id: '1',
-      title: 'Water Supply Disruption',
-      category: 'Maintenance',
-      priority: 'urgent',
-      description: "Water supply will be interrupted tomorrow from 10:00 AM to 2:00 PM for tank cleaning. Please store water accordingly.",
-      publishDate: 'Nov 9, 2025',
-      expiryDate: 'Nov 10, 2025',
-      hasReadMore: false,
-    },
-    {
-      id: '2',
-      title: 'Holi Celebration 2025',
-      category: 'Event',
-      priority: 'normal',
-      description: "Join us for the grand Holi celebration on March 25th at the clubhouse. Snacks and colors will be provided. Time: 4:00 PM onwards.",
-      publishDate: 'Nov 8, 2025',
-      expiryDate: 'Mar 25, 2025',
-      hasReadMore: false,
-    },
-    {
-      id: '3',
-      title: 'Parking Rules Update',
-      category: 'Rules',
-      priority: 'important',
-      description: "New parking rules effective from Nov 15. Visitor parking limited to 2 hours. Please display parking passes on dashboard.",
-      publishDate: 'Nov 7, 2025',
-      expiryDate: 'Dec 31, 2025',
-      hasReadMore: false,
-    },
-    {
-      id: '4',
-      title: 'Maintenance Bill - November',
-      category: 'Payment',
-      priority: 'important',
-      description: 'November maintenance bills have been generated. Due date: November 20, 2025. Late payment charges applicable after due date.',
-      publishDate: 'Nov 5, 2025',
-      expiryDate: 'Nov 20, 2025',
-      hasReadMore: false,
-    },
-    {
-      id: '5',
-      title: 'Security Guard Change',
-      category: 'Security',
-      priority: 'normal',
-      description: 'New security guard Mr. Ramesh Kumar has joined from November 1st for the night shift (8 PM - 8 AM).',
-      publishDate: 'Nov 1, 2025',
-      expiryDate: 'Dec 1, 2025',
-      hasReadMore: false,
-    },
-  ];
+  // Get user data from Redux
+  const { userData } = useSelector((state: any) => state.otp);
+  const userDetailData = useSelector(selectUserDetailData);
+  const user = userDetailData?.data?.result;
+  
+  // Get unitId and buildingId
+  const unitId = userData?.member?.unitId ||
+                 user?.unitId ||
+                 user?.unit?._id;
+  
+  const buildingId = userData?.member?.buildingId ||
+                     user?.buildingId ||
+                     user?.building?._id;
+
+  // Get notices from Redux store
+  const { loading, notices, error } = useSelector((state: RootState) => state.notices);
+  const [refreshing, setRefreshing] = React.useState(false);
+
+  useEffect(() => {
+    if (unitId) {
+      console.log('📢 Fetching notices for unitId:', unitId);
+      dispatch(fetchNotices(unitId) as never);
+    } else if (buildingId) {
+      console.log('📢 Fetching notices for buildingId:', buildingId);
+      dispatch(fetchNotices(undefined, buildingId) as never);
+    } else {
+      console.warn('⚠️ No unitId or buildingId found - cannot fetch notices');
+    }
+  }, [dispatch, unitId, buildingId]);
+
+  const onRefresh = () => {
+    if (unitId) {
+      setRefreshing(true);
+      dispatch(fetchNotices(unitId) as never);
+      setTimeout(() => setRefreshing(false), 1000);
+    } else if (buildingId) {
+      setRefreshing(true);
+      dispatch(fetchNotices(undefined, buildingId) as never);
+      setTimeout(() => setRefreshing(false), 1000);
+    }
+  };
 
   const getPriorityColor = (priority: string) => {
-    switch (priority) {
+    switch (priority?.toLowerCase()) {
       case 'urgent':
+      case 'high':
         return '#F44336';
       case 'important':
+      case 'medium':
         return '#FF9800';
+      case 'normal':
+      case 'low':
       default:
         return '#4CAF50';
     }
   };
 
   const getPriorityIcon = (priority: string) => {
-    switch (priority) {
+    switch (priority?.toLowerCase()) {
       case 'urgent':
+      case 'high':
         return '🔴';
       case 'important':
+      case 'medium':
         return '🟡';
+      case 'normal':
+      case 'low':
       default:
         return '🟢';
     }
   };
 
-  const handleItemPress = (item: NoticeItem) => {
-    Alert.alert(
-      item.title,
-      `${item.description}\n\nCategory: ${item.category}\nPublished: ${item.publishDate}\nValid until: ${item.expiryDate}`,
-      [{ text: 'OK' }]
-    );
+  const handleItemPress = (item: any) => {
+    navigation.navigate('NoticeDetails', { noticeId: item._id });
   };
 
-  const renderNoticeItem = ({ item }: { item: NoticeItem }) => {
+  const renderNoticeItem = ({ item }: { item: any }) => {
+    const formattedDate = item.publishDate 
+      ? new Date(item.publishDate).toLocaleDateString('en-US', {
+          month: 'short',
+          day: 'numeric',
+          year: 'numeric'
+        })
+      : 'N/A';
+
+    const expiryDate = item.expiryDate
+      ? new Date(item.expiryDate).toLocaleDateString('en-US', {
+          month: 'short',
+          day: 'numeric',
+          year: 'numeric'
+        })
+      : 'No expiry';
+
     return (
       <TouchableOpacity
         style={styles.communityCard}
@@ -118,15 +121,15 @@ const Community: React.FC<CommunityProps> = () => {
           </View>
           <View style={[styles.categoryBadge, { backgroundColor: getPriorityColor(item.priority) }]}>
             <Text style={styles.categoryText}>
-              {item.category.toUpperCase()}
+              {item.category?.toUpperCase() || 'GENERAL'}
             </Text>
           </View>
-          <Text style={styles.cardDescription}>
+          <Text style={styles.cardDescription} numberOfLines={3}>
             {item.description}
           </Text>
           <View style={styles.dateRow}>
             <Text style={styles.dateText}>
-              📅 Valid until: {item.expiryDate}
+              📅 {expiryDate !== 'No expiry' ? `Valid until: ${expiryDate}` : `Published: ${formattedDate}`}
             </Text>
           </View>
         </View>
@@ -134,19 +137,66 @@ const Community: React.FC<CommunityProps> = () => {
     );
   };
 
+  // Loading state
+  if (loading && !refreshing) {
+    return (
+      <Container style={styles.container}>
+        <View style={styles.headerContainer}>
+          <Text style={styles.headerTitle}>Notices & Announcements</Text>
+        </View>
+        <View style={styles.loadingContainer}>
+          <ActivityIndicator size="large" color={COLORS.BLUE_TEXT} />
+          <Text style={styles.loadingText}>Loading notices...</Text>
+        </View>
+      </Container>
+    );
+  }
+
+  // Error state
+  if (error && !loading) {
+    return (
+      <Container style={styles.container}>
+        <View style={styles.headerContainer}>
+          <Text style={styles.headerTitle}>Notices & Announcements</Text>
+        </View>
+        <View style={styles.errorContainer}>
+          <Text style={styles.errorText}>{error}</Text>
+          <TouchableOpacity style={styles.retryButton} onPress={onRefresh}>
+            <Text style={styles.retryButtonText}>Retry</Text>
+          </TouchableOpacity>
+        </View>
+      </Container>
+    );
+  }
+
+  // Empty state
+  if (!loading && (!notices || notices.length === 0)) {
+    return (
+      <Container style={styles.container}>
+        <View style={styles.headerContainer}>
+          <Text style={styles.headerTitle}>Notices & Announcements</Text>
+        </View>
+        <View style={styles.errorContainer}>
+          <Text style={styles.loadingText}>No notices available</Text>
+        </View>
+      </Container>
+    );
+  }
+
   return (
     <Container style={styles.container}>
-
-    <View style={styles.headerContainer}>
+      <View style={styles.headerContainer}>
         <Text style={styles.headerTitle}>Notices & Announcements</Text>
       </View>
 
       <FlatList
-        data={noticesData}
+        data={notices}
         renderItem={renderNoticeItem}
-        keyExtractor={(item) => item.id}
+        keyExtractor={(item) => item._id}
         contentContainerStyle={styles.listContainer}
         showsVerticalScrollIndicator={false}
+        refreshing={refreshing}
+        onRefresh={onRefresh}
       />
     </Container>
   );

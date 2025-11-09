@@ -1,6 +1,7 @@
 import { call, put, takeLatest } from 'redux-saga/effects';
 import { MakeApiRequest } from '../../services/apiService';
 import { GET, POST, DELETE } from '../../constants/api';
+import { SOCIETY_API_URL } from '../../config/environment';
 import {
   PRE_APPROVE_VISITOR,
   FETCH_MY_VISITORS,
@@ -19,9 +20,6 @@ import {
   deleteVisitorFailure,
 } from '../actions/visitors/visitorsAction';
 
-const API_BASE_URL = 'http://10.0.2.2:5000/api'; // Android emulator
-// const API_BASE_URL = 'http://localhost:5000/api'; // iOS simulator
-
 // Pre-Approve Visitor
 function* preApproveVisitorSaga(action: any): Generator<any, void, any> {
   try {
@@ -36,7 +34,7 @@ function* preApproveVisitorSaga(action: any): Generator<any, void, any> {
     } = action.payload;
 
     const response = yield call(MakeApiRequest, {
-      apiUrl: `${API_BASE_URL}/resident/visitors/pre-approve`,
+      apiUrl: `${SOCIETY_API_URL}/resident/visitors/pre-approve`,
       apiMethod: POST,
       apiPayload: {
         unitId,
@@ -65,7 +63,7 @@ function* fetchMyVisitorsSaga(action: any): Generator<any, void, any> {
     const { unitId, status } = action.payload;
 
     const response = yield call(MakeApiRequest, {
-      apiUrl: `${API_BASE_URL}/resident/visitors/my-visitors`,
+      apiUrl: `${SOCIETY_API_URL}/resident/visitors/my-visitors`,
       apiMethod: GET,
       apiParams: status ? { unitId, status } : { unitId },
     });
@@ -84,7 +82,7 @@ function* fetchTodayVisitorsSaga(action: any): Generator<any, void, any> {
     const { unitId } = action.payload;
 
     const response = yield call(MakeApiRequest, {
-      apiUrl: `${API_BASE_URL}/resident/visitors/today`,
+      apiUrl: `${SOCIETY_API_URL}/resident/visitors/today`,
       apiMethod: GET,
       apiParams: { unitId },
     });
@@ -105,7 +103,7 @@ function* fetchVisitorStatsSaga(action: any): Generator<any, void, any> {
     const { unitId } = action.payload;
 
     const response = yield call(MakeApiRequest, {
-      apiUrl: `${API_BASE_URL}/resident/visitors/stats`,
+      apiUrl: `${SOCIETY_API_URL}/resident/visitors/stats`,
       apiMethod: GET,
       apiParams: { unitId },
     });
@@ -126,7 +124,7 @@ function* deleteVisitorSaga(action: any): Generator<any, void, any> {
     const { visitorId } = action.payload;
 
     const response = yield call(MakeApiRequest, {
-      apiUrl: `${API_BASE_URL}/resident/visitors/${visitorId}`,
+      apiUrl: `${SOCIETY_API_URL}/resident/visitors/${visitorId}`,
       apiMethod: DELETE,
     });
 

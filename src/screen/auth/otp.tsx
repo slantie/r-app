@@ -122,41 +122,7 @@ const OtpScreen = ({ route, navigation }: any) => {
 
         setIsLoading(true);
         try {
-            // Static credentials bypass - check if mobile number and OTP match static values
-            const STATIC_MOBILE_NUMBER = '9988776655';
-            const STATIC_OTP = '123456';
-
-            if (phoneNumber === STATIC_MOBILE_NUMBER && otp === STATIC_OTP) {
-                console.log('Static OTP verification detected - bypassing API and going directly to home');
-
-                // Create mock user data to bypass all profile checks
-                const mockUserData = {
-                    accessToken: 'static_auth_token_' + Date.now(),
-                    isProfileSubmit: true,
-                    identitySelection: 'completed',
-                    isTerritorySubmit: true,
-                    phoneNumber: phoneNumber,
-                    countryCode: countryCode,
-                    // Add any other required user data fields
-                };
-
-                // Store access token and user data
-                PrefManager.setValue(STRING.TOKEN, mockUserData.accessToken);
-                PrefManager.setValue('userData', mockUserData);
-
-                // Set authentication token to bypass all screens and go directly to home
-                dispatch(
-                    setAuthToken({
-                        accessToken: mockUserData.accessToken,
-                        userData: mockUserData,
-                    }),
-                );
-
-                setIsLoading(false);
-                return;
-            }
-
-            // Original API flow for other credentials
+            // Use real API flow (mock data mode removed)
             const payload = {
                 countryCode: countryCode,
                 phoneNumber: phoneNumber,
@@ -169,42 +135,82 @@ const OtpScreen = ({ route, navigation }: any) => {
             const response = await dispatch(otpVarifyAction(payload));
 
             if (response.status === 200) {
-                console.log('OTP Success', response.data?.result);
-                const userData = response.data?.result;
+                console.log('OTP Success', response.data);
+                // New API structure: response.data = { success, message, data: {...} }
+                const apiData = response.data?.data || response.data?.result; // Support both old and new API
 
                 // Store access token for subsequent API calls
-                PrefManager.setValue(STRING.TOKEN, userData.accessToken);
+                PrefManager.setValue(STRING.TOKEN, apiData.accessToken);
 
-                // Three-step flow check
-                const isProfileSubmit = userData.isProfileSubmit;
-                const identitySelection = userData.identitySelection;
-                const isTerritorySubmit = userData.isTerritorySubmit;
+                // New API returns: isNewUser, isProfileComplete, isMemberRegistered, memberStatus
+                const isNewUser = apiData.isNewUser;
+                const isProfileComplete = apiData.isProfileComplete;
+                const isMemberRegistered = apiData.isMemberRegistered;
+                const memberStatus = apiData.memberStatus;
 
                 console.log(
-                    'Profile Status:', isProfileSubmit,
-                    'Identity Selection:', identitySelection,
-                    'Territory Status:', isTerritorySubmit,
+                    '🔑 OTP verified successfully',
+                    '\n  - Is New User:', isNewUser,
+                    '\n  - Profile Complete:', isProfileComplete,
+                    '\n  - Member Registered:', isMemberRegistered,
+                    '\n  - Member Status:', memberStatus
                 );
 
-                // Step 1: Check if profile is submitted
-                if (!isProfileSubmit) {
-                    console.log('📝 Profile not submitted - moving to profile setup');
+                // Prepare userData object for storage and navigation
+                const userData = {
+                    ...apiData.user,
+                    accessToken: apiData.accessToken,
+                    isNewUser,
+                    isProfileComplete,
+                    isMemberRegistered,
+                    memberStatus,
+                    member: apiData.member
+                };
+
+                // Navigation logic based on registration state:
+                // Step 1: If profile is not complete, go to profile completion
+                if (!isProfileComplete) {
+                    console.log('📝 Profile incomplete - navigating to profile setup');
+                    PrefManager.setValue('userData', JSON.stringify(userData));
                     navigation.navigate('Profile', { userData });
                 }
-                // Step 2: If profile is submitted, check identity selection
-                else if (!identitySelection || identitySelection === "") {
-                    console.log('🆔 Profile submitted but identity not selected - moving to WhoAmI screen');
-                    navigation.navigate('WhoAmI', { userData });
+                // Step 2: If profile complete but not registered as member, go to building selection
+                else if (!isMemberRegistered) {
+                    console.log('🏢 Profile complete but not a member - navigating to building selection');
+                    PrefManager.setValue('userData', JSON.stringify(userData));
+                    navigation.navigate('WhoAmI', { userData }); // Reuse this screen for building selection
                 }
-                // Step 3: If identity is selected, check territory submission
-                else if (!isTerritorySubmit) {
-                    console.log('📍 Profile and identity submitted but territory not submitted - moving to territory setup');
-                    navigation.navigate('Territory', { userData });
+                // Step 3: If member registered but pending approval, show status and go to home
+                else if (memberStatus === 'pending') {
+                    console.log('⏳ Member registration pending approval - navigating to home');
+                    PrefManager.setValue('userData', JSON.stringify(userData));
+                    Alert.alert(
+                        'Registration Pending',
+                        'Your membership request is pending approval from the building admin. You can still explore the app.',
+                        [{ text: 'OK' }]
+                    );
+                    dispatch(
+                        setAuthToken({
+                            accessToken: userData.accessToken,
+                            userData: userData,
+                        }),
+                    );
                 }
-                // All three conditions are met - proceed to main app
+                // Step 4: Member approved - full access to main app
+                else if (memberStatus === 'approved') {
+                    console.log('✅ Member approved - full access granted');
+                    PrefManager.setValue('userData', JSON.stringify(userData));
+                    dispatch(
+                        setAuthToken({
+                            accessToken: userData.accessToken,
+                            userData: userData,
+                        }),
+                    );
+                }
+                // Fallback: Any other status
                 else {
-                    console.log('✅ All steps completed - logging in to main app');
-                    PrefManager.setValue('userData', userData);
+                    console.log('ℹ️ Unknown member status - navigating to home with limited access');
+                    PrefManager.setValue('userData', JSON.stringify(userData));
                     dispatch(
                         setAuthToken({
                             accessToken: userData.accessToken,

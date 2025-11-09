@@ -18,7 +18,7 @@ import { print } from '../utils/method';
  * true  = Use mock data (no backend needed)
  * false = Use real backend API
  */
-export const USE_MOCK_DATA = true; // 👈 CHANGE THIS TO FALSE WHEN BACKEND IS READY
+export const USE_MOCK_DATA = false; // ✅ USING REAL BACKEND API
 
 // ============================================
 // ENHANCED API WRAPPER
@@ -150,6 +150,98 @@ export const apiResendOTP = async (
 };
 
 /**
+ * Update Profile API
+ */
+export const apiUpdateProfile = async (
+  apiUrl: string,
+  profileData: {
+    userId: string;
+    firstName: string;
+    lastName: string;
+    email: string;
+    gender?: string;
+    profileImage?: string;
+  }
+) => {
+  return MakeEnhancedApiRequest({
+    apiUrl,
+    apiMethod: POST,
+    apiData: profileData,
+    mockHandler: USE_MOCK_DATA
+      ? () => MockApiService.profileRegistration(profileData)
+      : undefined,
+  });
+};
+
+/**
+ * Register Member API
+ */
+export const apiRegisterMember = async (
+  apiUrl: string,
+  memberData: {
+    userId: string;
+    buildingId: string;
+    blockId: string;
+    floorId: string;
+    unitId: string;
+    memberType: string;
+    ownershipProof?: string;
+    gender?: string;
+  }
+) => {
+  return MakeEnhancedApiRequest({
+    apiUrl,
+    apiMethod: POST,
+    apiData: memberData,
+    // No mock handler - will use real API
+  });
+};
+
+/**
+ * Get Buildings Search API
+ */
+export const apiGetBuildings = async (
+  apiUrl: string,
+  params?: { search?: string; city?: string; state?: string }
+) => {
+  return MakeEnhancedApiRequest({
+    apiUrl,
+    apiMethod: GET,
+    apiParams: params,
+    mockHandler: USE_MOCK_DATA
+      ? () => MockApiService.getTerritoryList(1)
+      : undefined,
+  });
+};
+
+/**
+ * Get Building Details API
+ */
+export const apiGetBuildingDetails = async (
+  apiUrl: string
+) => {
+  return MakeEnhancedApiRequest({
+    apiUrl,
+    apiMethod: GET,
+    // No mock handler - will use real API
+  });
+};
+
+/**
+ * Get App Constants API
+ * Fetches dropdown options (member types, genders, etc.)
+ */
+export const apiGetAppConstants = async (
+  apiUrl: string
+) => {
+  return MakeEnhancedApiRequest({
+    apiUrl,
+    apiMethod: GET,
+    // No mock handler - will use real API
+  });
+};
+
+/**
  * Territory List API
  */
 export const apiGetTerritoryList = async (
@@ -206,6 +298,7 @@ export const apiSubmitTerritoryDetails = async (
 export const apiProfileRegistration = async (
   apiUrl: string,
   data: {
+    userId?: string;  // Added userId for new API
     firstName: string;
     lastName: string;
     email: string;

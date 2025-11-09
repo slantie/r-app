@@ -1,6 +1,7 @@
 import { call, put, takeLatest } from 'redux-saga/effects';
 import { MakeApiRequest } from '../../services/apiService';
 import { GET } from '../../constants/api';
+import { SOCIETY_API_URL } from '../../config/environment';
 import {
   FETCH_DASHBOARD_DATA,
   FETCH_QUICK_STATS,
@@ -10,16 +11,13 @@ import {
   fetchQuickStatsFailure,
 } from '../actions/dashboard/dashboardAction';
 
-const API_BASE_URL = 'http://10.0.2.2:5000/api'; // Android emulator
-// const API_BASE_URL = 'http://localhost:5000/api'; // iOS simulator
-
 // Fetch Dashboard Data
 function* fetchDashboardDataSaga(action: any): Generator<any, void, any> {
   try {
     const { unitId } = action.payload;
 
     const response = yield call(MakeApiRequest, {
-      apiUrl: `${API_BASE_URL}/resident/dashboard`,
+      apiUrl: `${SOCIETY_API_URL}/resident/dashboard`,
       apiMethod: GET,
       apiParams: { unitId },
     });
@@ -40,7 +38,7 @@ function* fetchQuickStatsSaga(action: any): Generator<any, void, any> {
     const { unitId } = action.payload;
 
     const response = yield call(MakeApiRequest, {
-      apiUrl: `${API_BASE_URL}/resident/dashboard/quick-stats`,
+      apiUrl: `${SOCIETY_API_URL}/resident/dashboard/quick-stats`,
       apiMethod: GET,
       apiParams: { unitId },
     });

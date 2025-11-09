@@ -7,6 +7,7 @@ import {
   ScrollView,
   Alert,
 } from 'react-native';
+import { useSelector } from 'react-redux';
 import { Container, HeaderComponent } from '../../components/common';
 import ParkingStyles from './styles/parkingStyles';
 import ParkingStorageService from '../../services/parkingStorage';
@@ -18,12 +19,19 @@ interface AddParkingProps {
 }
 
 const AddParking: React.FC<AddParkingProps> = ({ navigation }) => {
+  const { userData } = useSelector((state: any) => state.otp);
+  
+  // Get owner name from logged-in user
+  const ownerName = userData?.firstName && userData?.lastName 
+    ? `${userData.firstName} ${userData.lastName}`.trim()
+    : userData?.firstName || '';
+
   const [formData, setFormData] = useState({
     vehicleNumber: '',
     vehicleBrand: '',
     vehicleModel: '',
     vehicleColor: '',
-    ownerName: 'Slantie Hacks', // Default from user profile
+    ownerName: ownerName,
     slotNumber: '',
   });
 
