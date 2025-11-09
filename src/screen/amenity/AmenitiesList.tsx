@@ -1,5 +1,14 @@
 import React, { useEffect } from 'react';
-import { View, Text, FlatList, TouchableOpacity, ActivityIndicator, StyleSheet, RefreshControl, Image } from 'react-native';
+import {
+  View,
+  Text,
+  FlatList,
+  TouchableOpacity,
+  ActivityIndicator,
+  StyleSheet,
+  RefreshControl,
+  Image,
+} from 'react-native';
 import { useDispatch, useSelector } from 'react-redux';
 import Container from '../../components/common/container';
 import { RootState } from '../../store/reducers';
@@ -15,18 +24,41 @@ interface AmenitiesListProps {
 const AmenitiesList: React.FC<AmenitiesListProps> = ({ navigation }) => {
   const dispatch = useDispatch();
 
+  const { userData } = useSelector((state: any) => state.otp);
   const userDetailData = useSelector(selectUserDetailData);
   const user = userDetailData?.data?.result;
-  const buildingId = user?.buildingId || user?.building?._id;
 
-  const { loading, amenities, error } = useSelector((state: RootState) => state.amenities);
+  const buildingId =
+    userData?.member?.buildingId ||
+    user?.buildingId ||
+    user?.building?._id;
+
+  const { loading, amenities, error } = useSelector(
+    (state: RootState) => state.amenities
+  );
   const [refreshing, setRefreshing] = React.useState(false);
 
   useEffect(() => {
+    console.log('🏢 AmenitiesList - buildingId:', buildingId);
     if (buildingId) {
+      console.log('🏊 Fetching amenities for buildingId:', buildingId);
       dispatch(fetchAmenities(buildingId) as never);
+    } else {
+      console.warn('⚠️ No buildingId found - cannot fetch amenities');
     }
   }, [dispatch, buildingId]);
+
+  useEffect(() => {
+    if (amenities?.length) {
+      console.log(
+        '✅ Amenities fetched:',
+        amenities.map((a) => ({
+          name: a.name,
+          images: a.images,
+        }))
+      );
+    }
+  }, [amenities]);
 
   const onRefresh = () => {
     setRefreshing(true);
@@ -34,25 +66,6 @@ const AmenitiesList: React.FC<AmenitiesListProps> = ({ navigation }) => {
       dispatch(fetchAmenities(buildingId) as never);
     }
     setTimeout(() => setRefreshing(false), 1000);
-  };
-
-  const getAmenityIcon = (amenityType: string): string => {
-    switch (amenityType.toLowerCase()) {
-      case 'swimming pool':
-        return '🏊';
-      case 'gym':
-        return '💪';
-      case 'clubhouse':
-        return '🏛️';
-      case 'sports court':
-        return '🎾';
-      case 'community hall':
-        return '🏢';
-      case 'garden':
-        return '🌳';
-      default:
-        return '🏢';
-    }
   };
 
   const getStatusColor = (status: string): string => {
@@ -68,51 +81,105 @@ const AmenitiesList: React.FC<AmenitiesListProps> = ({ navigation }) => {
     }
   };
 
-  const renderAmenityItem = ({ item }: { item: any }) => (
-    <TouchableOpacity
-      style={styles.amenityCard}
-      onPress={() => navigation.navigate('AmenityDetails', { amenityId: item._id })}
-    >
-      <View style={styles.amenityIconContainer}>
-        <Text style={styles.amenityIcon}>{getAmenityIcon(item.amenityType)}</Text>
-      </View>
+  const renderAmenityItem = ({ item }: { item: any }) => {
+    // ✅ Handle both array and stringified array cases
+    const imageSource = Array.isArray(item.images)
+      ? item.images[0]
+      : (() => {
+        try {
+          const parsed = JSON.parse(item.images);
+          return Array.isArray(parsed) ? parsed[0] : null;
+        } catch {
+          return null;
+        }
+      })();
 
-      <View style={styles.amenityInfo}>
-        <Text style={styles.amenityName}>{item.name}</Text>
-        <Text style={styles.amenityType}>{item.amenityType}</Text>
-
-        {item.location && (
-          <Text style={styles.amenityLocation}>📍 {item.location}</Text>
+    return (
+      <TouchableOpacity
+        style={styles.amenityCard}
+        onPress={() =>
+          navigation.navigate('SimpleBooking', {
+            amenityId: item._id,
+            amenity: item,
+          })
+        }
+      >
+        {imageSource ? (
+          <Image
+            source={{ uri: imageSource }}
+            style={styles.amenityImage}
+            resizeMode="cover"
+            onError={(e) =>
+              console.warn('⚠️ Image failed to load:', e.nativeEvent.error)
+            }
+          />
+        ) : (
+          // ✅ Fallback placeholder
+          <Image
+            source={{
+              uri: 'https://via.placeholder.com/300x200?text=No+Image',
+            }}
+            style={styles.amenityImage}
+            resizeMode="cover"
+          />
         )}
 
-        <View style={styles.amenityMeta}>
-          <View style={[styles.statusBadge, { backgroundColor: getStatusColor(item.status) + '20' }]}>
-            <Text style={[styles.statusText, { color: getStatusColor(item.status) }]}>
-              {item.status.toUpperCase()}
+        <View style={styles.amenityCardContent}>
+          <View style={styles.amenityInfo}>
+            <Text style={styles.amenityName}>{item.name}</Text>
+            <Text style={styles.amenityDescription} numberOfLines={2}>
+              {item.description}
             </Text>
+
+            <View style={styles.amenityMeta}>
+              <View
+                style={[
+                  styles.statusBadge,
+                  { backgroundColor: getStatusColor(item.amenityStatus) + '20' },
+                ]}
+              >
+                <Text
+                  style={[
+                    styles.statusText,
+                    { color: getStatusColor(item.amenityStatus) },
+                  ]}
+                >
+                  {item.amenityStatus?.toUpperCase() || 'AVAILABLE'}
+                </Text>
+              </View>
+
+              {item.amenityType === 'paid' && (
+                <View style={styles.priceBadge}>
+                  <Text style={styles.priceText}>
+                    ₹{item.bookingCharge || 0}
+                  </Text>
+                </View>
+              )}
+
+              {item.amenityType === 'free' && (
+                <View style={styles.freeBadge}>
+                  <Text style={styles.freeText}>FREE</Text>
+                </View>
+              )}
+            </View>
+
+            <View style={styles.amenityDetails}>
+              <Text style={styles.detailText}>
+                👥 Capacity: {item.capacity}
+              </Text>
+              {item.requiresApproval && (
+                <Text style={styles.approvalText}>
+                  ⚠️ Requires Approval
+                </Text>
+              )}
+            </View>
           </View>
 
-          {item.bookingRequired && (
-            <Text style={styles.bookingRequired}>🎫 Booking Required</Text>
-          )}
+          <Text style={styles.viewDetails}>→</Text>
         </View>
-
-        {item.bookingRequired && item.slotDuration && (
-          <Text style={styles.slotInfo}>
-            ⏱️ Slot Duration: {item.slotDuration} minutes
-          </Text>
-        )}
-
-        {item.pricePerSlot > 0 && (
-          <Text style={styles.priceInfo}>
-            💰 ₹{item.pricePerSlot} per slot
-          </Text>
-        )}
-      </View>
-
-      <Text style={styles.viewDetails}>→</Text>
-    </TouchableOpacity>
-  );
+      </TouchableOpacity>
+    );
+  };
 
   if (loading && amenities.length === 0) {
     return (
@@ -156,7 +223,8 @@ const AmenitiesList: React.FC<AmenitiesListProps> = ({ navigation }) => {
       <View style={styles.header}>
         <Text style={styles.headerTitle}>Amenities</Text>
         <Text style={styles.headerSubtitle}>
-          {amenities.length} {amenities.length === 1 ? 'amenity' : 'amenities'} available
+          {amenities.length}{' '}
+          {amenities.length === 1 ? 'amenity' : 'amenities'} available
         </Text>
       </View>
 
@@ -179,7 +247,11 @@ const AmenitiesList: React.FC<AmenitiesListProps> = ({ navigation }) => {
           keyExtractor={(item) => item._id}
           contentContainerStyle={styles.listContainer}
           refreshControl={
-            <RefreshControl refreshing={refreshing} onRefresh={onRefresh} colors={['#5773FF']} />
+            <RefreshControl
+              refreshing={refreshing}
+              onRefresh={onRefresh}
+              colors={['#5773FF']}
+            />
           }
         />
       )}
@@ -229,27 +301,66 @@ const styles = StyleSheet.create({
   amenityCard: {
     backgroundColor: '#fff',
     borderRadius: 16,
-    padding: 16,
     marginBottom: 16,
-    flexDirection: 'row',
-    alignItems: 'center',
+    overflow: 'hidden',
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
     shadowRadius: 4,
     elevation: 3,
   },
-  amenityIconContainer: {
-    width: 60,
-    height: 60,
-    borderRadius: 12,
+  amenityImage: {
+    width: '100%',
+    height: 180,
     backgroundColor: '#F0F4FF',
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginRight: 16,
   },
-  amenityIcon: {
-    fontSize: 32,
+  amenityCardContent: {
+    padding: 16,
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  amenityDescription: {
+    fontSize: 13,
+    color: '#666',
+    marginBottom: 8,
+    lineHeight: 18,
+  },
+  amenityDetails: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+    marginTop: 8,
+  },
+  detailText: {
+    fontSize: 12,
+    color: '#666',
+  },
+  approvalText: {
+    fontSize: 11,
+    color: '#FF9800',
+    fontWeight: '600',
+  },
+  priceBadge: {
+    backgroundColor: '#4CAF5020',
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    borderRadius: 8,
+  },
+  priceText: {
+    fontSize: 13,
+    color: '#4CAF50',
+    fontWeight: '700',
+  },
+  freeBadge: {
+    backgroundColor: '#2196F320',
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    borderRadius: 8,
+  },
+  freeText: {
+    fontSize: 11,
+    color: '#2196F3',
+    fontWeight: '700',
   },
   amenityInfo: {
     flex: 1,
@@ -259,16 +370,6 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     color: '#1A1A1A',
     marginBottom: 4,
-  },
-  amenityType: {
-    fontSize: 14,
-    color: '#666',
-    marginBottom: 8,
-  },
-  amenityLocation: {
-    fontSize: 13,
-    color: '#999',
-    marginBottom: 8,
   },
   amenityMeta: {
     flexDirection: 'row',
@@ -284,22 +385,6 @@ const styles = StyleSheet.create({
   statusText: {
     fontSize: 11,
     fontWeight: '700',
-  },
-  bookingRequired: {
-    fontSize: 11,
-    color: '#5773FF',
-    fontWeight: '600',
-  },
-  slotInfo: {
-    fontSize: 12,
-    color: '#666',
-    marginTop: 4,
-  },
-  priceInfo: {
-    fontSize: 13,
-    color: '#4CAF50',
-    fontWeight: '600',
-    marginTop: 4,
   },
   viewDetails: {
     fontSize: 24,

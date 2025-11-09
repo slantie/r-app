@@ -36,7 +36,7 @@ function* fetchAmenitiesSaga(action: any): Generator<any, void, any> {
       apiParams: { buildingId },
     });
 
-    yield put(fetchAmenitiesSuccess(response.data));
+    yield put(fetchAmenitiesSuccess(response.data.data));
   } catch (error: any) {
     yield put(
       fetchAmenitiesFailure(error.message || 'Failed to fetch amenities'),
@@ -55,7 +55,7 @@ function* fetchAmenityDetailsSaga(action: any): Generator<any, void, any> {
       apiParams: date ? { date } : undefined,
     });
 
-    yield put(fetchAmenityDetailsSuccess(response.data));
+    yield put(fetchAmenityDetailsSuccess(response.data.data));
   } catch (error: any) {
     yield put(
       fetchAmenityDetailsFailure(
@@ -76,7 +76,7 @@ function* fetchAvailableSlotsSaga(action: any): Generator<any, void, any> {
       apiParams: { date },
     });
 
-    yield put(fetchAvailableSlotsSuccess(response.data));
+    yield put(fetchAvailableSlotsSuccess(response.data.data));
   } catch (error: any) {
     yield put(
       fetchAvailableSlotsFailure(
@@ -97,7 +97,7 @@ function* bookAmenitySlotSaga(action: any): Generator<any, void, any> {
       apiPayload: { amenityId, slotId, memberId, unitId, bookingDate },
     });
 
-    yield put(bookAmenitySlotSuccess(response.data));
+    yield put(bookAmenitySlotSuccess(response.data.data));
   } catch (error: any) {
     yield put(
       bookAmenitySlotFailure(error.message || 'Failed to book amenity slot'),
@@ -108,15 +108,15 @@ function* bookAmenitySlotSaga(action: any): Generator<any, void, any> {
 // Fetch My Bookings
 function* fetchMyBookingsSaga(action: any): Generator<any, void, any> {
   try {
-    const { unitId } = action.payload;
+    const { userId } = action.payload;
 
     const response = yield call(MakeApiRequest, {
-      apiUrl: `${API_BASE_URL}/resident/amenities/bookings/my-bookings`,
+      apiUrl: `${API_BASE_URL}/resident/amenities/my-bookings`,
       apiMethod: GET,
-      apiParams: { unitId },
+      apiParams: { userId },
     });
 
-    yield put(fetchMyBookingsSuccess(response.data));
+    yield put(fetchMyBookingsSuccess(response.data.data));
   } catch (error: any) {
     yield put(
       fetchMyBookingsFailure(error.message || 'Failed to fetch bookings'),
@@ -134,7 +134,7 @@ function* cancelBookingSaga(action: any): Generator<any, void, any> {
       apiMethod: DELETE,
     });
 
-    yield put(cancelBookingSuccess(response.data));
+    yield put(cancelBookingSuccess(response.data.data));
   } catch (error: any) {
     yield put(
       cancelBookingFailure(error.message || 'Failed to cancel booking'),

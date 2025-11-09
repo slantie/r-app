@@ -1,8 +1,10 @@
 import React, { useState, useCallback } from 'react';
 import { View, Text, FlatList, TouchableOpacity, Alert, ActivityIndicator, RefreshControl } from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
+import { useSelector } from 'react-redux';
 import { Container, HeaderComponent } from '../../components/common';
-import Database, { Complaint } from '../../services/database';
+import { MakeApiRequest } from '../../services/apiService';
+import { GET } from '../../constants/api';
 import { COLORS } from '../../constants';
 import complaintStyles from './styles/complaintStyles';
 
@@ -14,33 +16,43 @@ interface ComplaintManagementProps {
 }
 
 const ComplaintManagement: React.FC<ComplaintManagementProps> = ({ navigation }) => {
+  const { userData } = useSelector((state: any) => state.otp);
+  const memberId = userData?.member?._id;
+
   const [activeTab, setActiveTab] = useState<'open' | 'resolved'>('open');
-  const [complaints, setComplaints] = useState<Complaint[]>([]);
+  const [complaints, setComplaints] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
 
-  useFocusEffect(
-    useCallback(() => {
-      loadComplaints();
-    }, [])
-  );
+  const loadComplaints = useCallback(async () => {
+    if (!memberId) {
+      setLoading(false);
+      return;
+    }
 
-  const loadComplaints = async () => {
     try {
       setLoading(true);
-      const allComplaints = await Database.getAllComplaints();
-      // Sort by date - newest first
-      const sorted = allComplaints.sort((a, b) => {
-        return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
+      const response = await MakeApiRequest({
+        apiUrl: `http://10.0.2.2:5000/api/complaints?memberId=${memberId}`,
+        apiMethod: GET,
       });
-      setComplaints(sorted);
+
+      if (response.data.success) {
+        setComplaints(response.data.data);
+      }
     } catch (error) {
       console.error('Error loading complaints:', error);
       Alert.alert('Error', 'Failed to load complaints');
     } finally {
       setLoading(false);
     }
-  };
+  }, [memberId]);
+
+  useFocusEffect(
+    useCallback(() => {
+      loadComplaints();
+    }, [loadComplaints])
+  );
 
   const handleRefresh = async () => {
     setRefreshing(true);
@@ -49,13 +61,13 @@ const ComplaintManagement: React.FC<ComplaintManagementProps> = ({ navigation })
   };
 
   const openComplaints = complaints.filter(
-    c => c.status === 'open' || c.status === 'in-progress'
+    c => c.complaintStatus === 'open' || c.complaintStatus === 'in-process' || c.complaintStatus === 're-open'
   );
   const resolvedComplaints = complaints.filter(
-    c => c.status === 'resolved' || c.status === 'closed'
+    c => c.complaintStatus === 'close' || c.complaintStatus === 'dismiss'
   );
 
-  const getCategoryIcon = (category: Complaint['category']): string => {
+  const getCategoryIcon = (category: string): string => {
     switch (category) {
       case 'plumbing':
         return '🚰';
@@ -65,6 +77,8 @@ const ComplaintManagement: React.FC<ComplaintManagementProps> = ({ navigation })
         return '🧹';
       case 'security':
         return '🔒';
+      case 'maintenance':
+        return '🔧';
       case 'other':
         return '📋';
       default:
@@ -72,10 +86,8 @@ const ComplaintManagement: React.FC<ComplaintManagementProps> = ({ navigation })
     }
   };
 
-  const getPriorityStyle = (priority: Complaint['priority']) => {
+  const getPriorityStyle = (priority: string) => {
     switch (priority) {
-      case 'urgent':
-        return { container: complaintStyles.priorityUrgent, text: complaintStyles.priorityTextUrgent };
       case 'high':
         return { container: complaintStyles.priorityHigh, text: complaintStyles.priorityTextHigh };
       case 'medium':
@@ -87,82 +99,65 @@ const ComplaintManagement: React.FC<ComplaintManagementProps> = ({ navigation })
     }
   };
 
-  const getStatusStyle = (status: Complaint['status']) => {
+  const getStatusStyle = (status: string) => {
     switch (status) {
       case 'open':
+      case 're-open':
         return { container: complaintStyles.statusOpen, text: complaintStyles.statusTextOpen };
-      case 'in-progress':
+      case 'in-process':
         return { container: complaintStyles.statusInProgress, text: complaintStyles.statusTextInProgress };
-      case 'resolved':
+      case 'on-hold':
+        return { container: complaintStyles.statusClosed, text: complaintStyles.statusTextClosed };
+      case 'close':
         return { container: complaintStyles.statusResolved, text: complaintStyles.statusTextResolved };
-      case 'closed':
+      case 'dismiss':
         return { container: complaintStyles.statusClosed, text: complaintStyles.statusTextClosed };
       default:
         return { container: complaintStyles.statusOpen, text: complaintStyles.statusTextOpen };
     }
   };
 
-  const getStatusLabel = (status: Complaint['status']): string => {
+  const getStatusLabel = (status: string): string => {
     switch (status) {
       case 'open':
         return 'Open';
-      case 'in-progress':
+      case 'in-process':
         return 'In Progress';
-      case 'resolved':
-        return 'Resolved';
-      case 'closed':
+      case 'on-hold':
+        return 'On Hold';
+      case 'close':
         return 'Closed';
+      case 're-open':
+        return 'Re-opened';
+      case 'dismiss':
+        return 'Dismissed';
       default:
         return status;
     }
   };
 
-  const getCategoryLabel = (category: Complaint['category']): string => {
+  const getCategoryLabel = (category: string): string => {
     return category.charAt(0).toUpperCase() + category.slice(1);
   };
 
-  const getDaysOpen = (submittedDate: string): number => {
-    const submitted = new Date(submittedDate);
+  const getDaysOpen = (createdAt: string): number => {
+    const created = new Date(createdAt);
     const today = new Date();
-    const diffTime = Math.abs(today.getTime() - submitted.getTime());
+    const diffTime = Math.abs(today.getTime() - created.getTime());
     const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
     return diffDays;
   };
 
-  const handleViewDetails = useCallback((complaint: Complaint) => {
-    navigation.navigate('ComplaintDetails', { id: complaint.id });
+  const handleViewDetails = useCallback((complaint: any) => {
+    navigation.navigate('ComplaintDetails', { complaintId: complaint._id });
   }, [navigation]);
 
-  const handleDeleteComplaint = useCallback(async (complaintId: string, title: string) => {
-    Alert.alert(
-      'Delete Complaint',
-      `Are you sure you want to delete "${title}"?`,
-      [
-        { text: 'Cancel', style: 'cancel' },
-        {
-          text: 'Delete',
-          style: 'destructive',
-          onPress: async () => {
-            try {
-              await Database.deleteComplaint(complaintId);
-              Alert.alert('Success', 'Complaint deleted successfully');
-              await loadComplaints();
-            } catch (error) {
-              console.error('Error deleting complaint:', error);
-              Alert.alert('Error', 'Failed to delete complaint');
-            }
-          },
-        },
-      ]
-    );
-  }, []);
-
-  const renderComplaintCard = useCallback(({ item }: { item: Complaint }) => {
+  const renderComplaintCard = useCallback(({ item }: { item: any }) => {
     const priorityStyle = getPriorityStyle(item.priority);
-    const statusStyle = getStatusStyle(item.status);
-    const daysOpen = getDaysOpen(item.submittedDate);
-    const isOpen = item.status === 'open' || item.status === 'in-progress';
-    const needsEscalation = isOpen && daysOpen > 7; // Escalate after 7 days
+    const statusStyle = getStatusStyle(item.complaintStatus);
+    const daysOpen = getDaysOpen(item.createdAt);
+    const isOpen = item.complaintStatus === 'open' || item.complaintStatus === 'in-process';
+    const needsEscalation = isOpen && daysOpen > 7;
 
     return (
       <View style={complaintStyles.complaintCard}>
@@ -192,18 +187,24 @@ const ComplaintManagement: React.FC<ComplaintManagementProps> = ({ navigation })
         <View style={complaintStyles.metaInfo}>
           <View style={complaintStyles.metaRow}>
             <Text style={complaintStyles.metaLabel}>Submitted:</Text>
-            <Text style={complaintStyles.metaValue}>{item.submittedDate}</Text>
+            <Text style={complaintStyles.metaValue}>
+              {new Date(item.createdAt).toLocaleDateString('en-GB', {
+                day: '2-digit',
+                month: 'short',
+                year: 'numeric',
+              })}
+            </Text>
           </View>
-          {item.assignedTo && (
-            <View style={complaintStyles.metaRow}>
-              <Text style={complaintStyles.metaLabel}>Assigned to:</Text>
-              <Text style={complaintStyles.metaValue}>{item.assignedTo}</Text>
-            </View>
-          )}
           {item.resolvedDate && (
             <View style={complaintStyles.metaRow}>
               <Text style={complaintStyles.metaLabel}>Resolved:</Text>
-              <Text style={complaintStyles.metaValue}>{item.resolvedDate}</Text>
+              <Text style={complaintStyles.metaValue}>
+                {new Date(item.resolvedDate).toLocaleDateString('en-GB', {
+                  day: '2-digit',
+                  month: 'short',
+                  year: 'numeric',
+                })}
+              </Text>
             </View>
           )}
         </View>
@@ -212,13 +213,16 @@ const ComplaintManagement: React.FC<ComplaintManagementProps> = ({ navigation })
           <View style={complaintStyles.statusSection}>
             <View style={[complaintStyles.statusBadge, statusStyle.container]}>
               <Text style={[complaintStyles.statusText, statusStyle.text]}>
-                {getStatusLabel(item.status)}
+                {getStatusLabel(item.complaintStatus)}
               </Text>
             </View>
             {needsEscalation && (
               <View style={complaintStyles.escalationBadge}>
                 <Text style={complaintStyles.escalationText}>⚠️ {daysOpen} days old</Text>
               </View>
+            )}
+            {item.replies && item.replies.length > 0 && (
+              <Text style={complaintStyles.replyCount}>💬 {item.replies.length}</Text>
             )}
           </View>
 
@@ -229,19 +233,11 @@ const ComplaintManagement: React.FC<ComplaintManagementProps> = ({ navigation })
             >
               <Text style={complaintStyles.viewButtonText}>View Details</Text>
             </TouchableOpacity>
-            {item.status === 'closed' && (
-              <TouchableOpacity
-                style={complaintStyles.deleteButton}
-                onPress={() => handleDeleteComplaint(item.id, item.title)}
-              >
-                <Text style={complaintStyles.deleteButtonText}>Delete</Text>
-              </TouchableOpacity>
-            )}
           </View>
         </View>
       </View>
     );
-  }, [handleViewDetails, handleDeleteComplaint]);
+  }, [handleViewDetails]);
 
   const renderEmptyState = useCallback(() => (
     <View style={complaintStyles.emptyContainer}>
@@ -329,7 +325,7 @@ const ComplaintManagement: React.FC<ComplaintManagementProps> = ({ navigation })
           <FlatList
             data={activeTab === 'open' ? openComplaints : resolvedComplaints}
             renderItem={renderComplaintCard}
-            keyExtractor={item => item.id}
+            keyExtractor={item => item._id}
             showsVerticalScrollIndicator={false}
             ListEmptyComponent={renderEmptyState}
             refreshControl={

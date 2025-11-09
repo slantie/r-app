@@ -35,6 +35,8 @@ const Home: React.FC<HomeProps> = ({ navigation }) => {
   const dispatch = useDispatch();
   const { userData } = useSelector((state: { otp: { userData: any } }) => state.otp);
   const userName = userData?.firstName || 'Resident';
+  const committeeType = userData?.committeeMember?.committeeType || null;
+  const isCommitteeMember = userData?.isCommitteeMember || false;
   const userDetailData = useSelector(selectUserDetailData);
   const user = userDetailData?.data?.result;
 
@@ -179,6 +181,8 @@ const Home: React.FC<HomeProps> = ({ navigation }) => {
         navigation.navigate('MaintenanceManagement');
       } else if (item.label === 'Complaints') {
         navigation.navigate('ComplaintManagement');
+      } else if (item.label === 'Amenities') {
+        navigation.navigate('AmenitiesList');
       } else {
         Alert.alert(
           'Coming Soon',
@@ -250,9 +254,28 @@ const Home: React.FC<HomeProps> = ({ navigation }) => {
     <Container>
       <ScrollView showsVerticalScrollIndicator={false}>
         <View style={HomeStyles.header}>
-          <Text style={HomeStyles.headerTitle}>
-            Hello, {userName}
-          </Text>
+          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+            <Text style={HomeStyles.headerTitle}>
+              Hello, {userName}
+            </Text>
+            {isCommitteeMember && committeeType && (
+              <View style={{
+                backgroundColor: '#9C27B0',
+                paddingHorizontal: 10,
+                paddingVertical: 4,
+                borderRadius: 12,
+              }}>
+                <Text style={{
+                  color: '#FFFFFF',
+                  fontSize: 11,
+                  fontWeight: '600',
+                  textTransform: 'uppercase',
+                }}>
+                  {committeeType}
+                </Text>
+              </View>
+            )}
+          </View>
           <Text style={HomeStyles.headerSubtitle}>
             {unitInfo}
           </Text>

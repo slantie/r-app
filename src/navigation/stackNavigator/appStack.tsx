@@ -18,6 +18,9 @@ import { VisitorManagement, AddVisitor, VisitorDetails } from '../../screen/visi
 import { ParkingManagement, AddParking, ParkingDetails } from '../../screen/parking';
 import { MaintenanceManagement, MaintenanceDetails } from '../../screen/maintenance';
 import { ComplaintManagement, ComplaintDetails, AddComplaint } from '../../screen/complaint';
+import AmenitiesList from '../../screen/amenity/AmenitiesList';
+import SimpleBookingScreen from '../../screen/amenity/SimpleBookingScreen';
+import MyBookings from '../../screen/amenity/MyBookings';
 
 const Stack = createStackNavigator();
 
@@ -49,6 +52,9 @@ const AppStack = () => {
   <Stack.Screen name="ComplaintManagement" component={ComplaintManagement} />
   <Stack.Screen name="ComplaintDetails" component={ComplaintDetails} />
   <Stack.Screen name="AddComplaint" component={AddComplaint} />
+  <Stack.Screen name="AmenitiesList" component={AmenitiesList} />
+  <Stack.Screen name="SimpleBooking" component={SimpleBookingScreen} />
+  <Stack.Screen name="MyBookings" component={MyBookings} />
     </Stack.Navigator>
   );
 }

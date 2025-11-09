@@ -86,9 +86,9 @@ export const bookAmenitySlotFailure = (error: string) => ({
     payload: error
 });
 
-export const fetchMyBookings = (unitId: string) => ({
+export const fetchMyBookings = (userId: string) => ({
     type: FETCH_MY_BOOKINGS,
-    payload: { unitId }
+    payload: { userId }
 });
 
 export const fetchMyBookingsSuccess = (data: any) => ({

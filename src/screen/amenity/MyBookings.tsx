@@ -15,23 +15,22 @@ interface MyBookingsProps {
 const MyBookings: React.FC<MyBookingsProps> = ({ navigation }) => {
   const dispatch = useDispatch();
 
-  const userDetailData = useSelector(selectUserDetailData);
-  const user = userDetailData?.data?.result;
-  const unitId = user?.unitId || user?.unit?._id;
+  const { userData } = useSelector((state: { otp: { userData: any } }) => state.otp);
+  const userId = userData?.user?._id || userData?._id;
 
   const { loading, myBookings, cancelling, error } = useSelector((state: RootState) => state.amenities);
   const [refreshing, setRefreshing] = React.useState(false);
 
   useEffect(() => {
-    if (unitId) {
-      dispatch(fetchMyBookings(unitId) as never);
+    if (userId) {
+      dispatch(fetchMyBookings(userId) as never);
     }
-  }, [dispatch, unitId]);
+  }, [dispatch, userId]);
 
   const onRefresh = () => {
     setRefreshing(true);
-    if (unitId) {
-      dispatch(fetchMyBookings(unitId) as never);
+    if (userId) {
+      dispatch(fetchMyBookings(userId) as never);
     }
     setTimeout(() => setRefreshing(false), 1000);
   };
@@ -51,8 +50,8 @@ const MyBookings: React.FC<MyBookingsProps> = ({ navigation }) => {
           onPress: () => {
             dispatch(cancelBooking(bookingId) as never);
             setTimeout(() => {
-              if (unitId) {
-                dispatch(fetchMyBookings(unitId) as never);
+              if (userId) {
+                dispatch(fetchMyBookings(userId) as never);
               }
             }, 500);
           },
@@ -87,9 +86,9 @@ const MyBookings: React.FC<MyBookingsProps> = ({ navigation }) => {
       <View style={styles.bookingCard}>
         <View style={styles.bookingHeader}>
           <Text style={styles.amenityName}>{item.amenityId?.name || 'Amenity'}</Text>
-          <View style={[styles.statusBadge, { backgroundColor: getStatusColor(item.status) + '20' }]}>
-            <Text style={[styles.statusText, { color: getStatusColor(item.status) }]}>
-              {item.status.toUpperCase()}
+          <View style={[styles.statusBadge, { backgroundColor: getStatusColor(item.bookingStatus) + '20' }]}>
+            <Text style={[styles.statusText, { color: getStatusColor(item.bookingStatus) }]}>
+              {item.bookingStatus?.toUpperCase()}
             </Text>
           </View>
         </View>
@@ -107,31 +106,29 @@ const MyBookings: React.FC<MyBookingsProps> = ({ navigation }) => {
             </Text>
           </View>
 
-          {item.slotId && (
+          {(item.startTime || item.endTime) && (
             <View style={styles.detailRow}>
               <Text style={styles.detailIcon}>⏰</Text>
               <Text style={styles.detailText}>
-                {item.slotId.startTime} - {item.slotId.endTime}
+                {item.startTime || '09:00'} - {item.endTime || '10:00'}
               </Text>
             </View>
           )}
 
           <View style={styles.detailRow}>
-            <Text style={styles.detailIcon}>🎫</Text>
-            <Text style={styles.detailText}>Booking ID: {item._id.slice(-8)}</Text>
+            <Text style={styles.detailIcon}>💰</Text>
+            <Text style={styles.detailText}>
+              Amount: ₹{item.bookingAmount || 0} ({item.paymentStatus})
+            </Text>
           </View>
 
-          {item.bookingDate && (
-            <View style={styles.detailRow}>
-              <Text style={styles.detailIcon}>📝</Text>
-              <Text style={styles.detailText}>
-                Booked on: {new Date(item.createdAt).toLocaleDateString('en-US')}
-              </Text>
-            </View>
-          )}
+          <View style={styles.detailRow}>
+            <Text style={styles.detailIcon}>🎫</Text>
+            <Text style={styles.detailText}>ID: {item._id.slice(-8)}</Text>
+          </View>
         </View>
 
-        {upcoming && item.status === 'confirmed' && (
+        {upcoming && item.bookingStatus === 'confirmed' && (
           <TouchableOpacity
             style={[styles.cancelButton, cancelling && styles.cancelButtonDisabled]}
             onPress={() => handleCancelBooking(item._id, item.amenityId?.name || 'this amenity')}

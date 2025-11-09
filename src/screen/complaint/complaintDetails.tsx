@@ -1,7 +1,10 @@
-import React, { useEffect, useState } from 'react';
-import { View, Text, ScrollView, TouchableOpacity, Alert, ActivityIndicator } from 'react-native';
-import Database, { Complaint } from '../../services/database';
+import React, { useState, useCallback } from 'react';
+import { View, Text, ScrollView, TouchableOpacity, TextInput, Alert, ActivityIndicator, RefreshControl, KeyboardAvoidingView, Platform } from 'react-native';
+import { useFocusEffect } from '@react-navigation/native';
+import { useSelector } from 'react-redux';
 import { Container, HeaderComponent } from '../../components/common';
+import { MakeApiRequest } from '../../services/apiService';
+import { GET, POST } from '../../constants/api';
 import { COLORS } from '../../constants';
 import complaintDetailsStyles from './styles/complaintDetailsStyles';
 
@@ -11,170 +14,134 @@ interface Props {
 }
 
 const ComplaintDetails: React.FC<Props> = ({ route, navigation }) => {
-  const { id } = route.params || {};
-  const [complaint, setComplaint] = useState<Complaint | null>(null);
-  const [loading, setLoading] = useState<boolean>(true);
+  const { complaintId } = route.params || {};
+  const { userData } = useSelector((state: any) => state.otp);
+  const userId = userData?.user?._id || userData?._id;
 
-  useEffect(() => {
-    let mounted = true;
-    (async () => {
-      setLoading(true);
-      try {
-        if (!id) return;
-        const c = await Database.getComplaintById(id);
-        if (mounted) setComplaint(c);
-      } catch (error) {
-        console.error('Error loading complaint:', error);
-        Alert.alert('Error', 'Unable to load complaint details');
-      } finally {
-        if (mounted) setLoading(false);
-      }
-    })();
-    return () => { mounted = false; };
-  }, [id]);
+  const [complaint, setComplaint] = useState<any>(null);
+  const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
+  const [replyText, setReplyText] = useState('');
+  const [sendingReply, setSendingReply] = useState(false);
 
-  const getCategoryIcon = (category: Complaint['category']): string => {
-    switch (category) {
-      case 'plumbing': return '🚰';
-      case 'electrical': return '💡';
-      case 'cleaning': return '🧹';
-      case 'security': return '🔒';
-      case 'other': return '📋';
-      default: return '📋';
-    }
-  };
-
-  const getCategoryLabel = (category: Complaint['category']): string => {
-    return category.charAt(0).toUpperCase() + category.slice(1);
-  };
-
-  const getPriorityColor = (priority: Complaint['priority']): string => {
-    switch (priority) {
-      case 'urgent': return '#C62828';
-      case 'high': return '#E65100';
-      case 'medium': return '#1565C0';
-      case 'low': return '#558B2F';
-      default: return '#757575';
-    }
-  };
-
-  const getStatusLabel = (status: Complaint['status']): string => {
-    switch (status) {
-      case 'open': return 'Open';
-      case 'in-progress': return 'In Progress';
-      case 'resolved': return 'Resolved';
-      case 'closed': return 'Closed';
-      default: return status;
-    }
-  };
-
-  const getStatusColor = (status: Complaint['status']): string => {
-    switch (status) {
-      case 'open': return '#E65100';
-      case 'in-progress': return '#1565C0';
-      case 'resolved': return '#2E7D32';
-      case 'closed': return '#616161';
-      default: return '#757575';
-    }
-  };
-
-  const handleChangeStatus = async (newStatus: Complaint['status']) => {
-    if (!complaint) return;
-
-    const statusTransitions: Record<Complaint['status'], Complaint['status'][]> = {
-      'open': ['in-progress', 'closed'],
-      'in-progress': ['resolved', 'open'],
-      'resolved': ['closed', 'open'],
-      'closed': [],
-    };
-
-    const allowedStatuses = statusTransitions[complaint.status];
-    
-    if (!allowedStatuses.includes(newStatus)) {
-      Alert.alert('Invalid Action', `Cannot change status from ${complaint.status} to ${newStatus}`);
-      return;
-    }
-
+  const loadComplaintDetails = useCallback(async () => {
     try {
-      const updates: Partial<Complaint> = { status: newStatus };
-      
-      if (newStatus === 'resolved') {
-        updates.resolvedDate = new Date().toLocaleDateString('en-GB', { 
-          day: '2-digit', 
-          month: 'short', 
-          year: 'numeric' 
-        });
-      }
+      setLoading(true);
+      const response = await MakeApiRequest({
+        apiUrl: `http://10.0.2.2:5000/api/complaints/${complaintId}`,
+        apiMethod: GET,
+      });
 
-      await Database.updateComplaint(complaint.id, updates);
-      
-      const updated = await Database.getComplaintById(complaint.id);
-      setComplaint(updated);
-      
-      Alert.alert('Success', `Status updated to ${getStatusLabel(newStatus)}`);
+      if (response.data.success) {
+        setComplaint(response.data.data);
+      }
     } catch (error) {
-      console.error('Error updating status:', error);
-      Alert.alert('Error', 'Failed to update status');
+      console.error('Error loading complaint details:', error);
+      Alert.alert('Error', 'Failed to load complaint details');
+    } finally {
+      setLoading(false);
     }
+  }, [complaintId]);
+
+  useFocusEffect(
+    useCallback(() => {
+      loadComplaintDetails();
+    }, [loadComplaintDetails])
+  );
+
+  const onRefresh = async () => {
+    setRefreshing(true);
+    await loadComplaintDetails();
+    setRefreshing(false);
   };
 
-  const showStatusChangeOptions = () => {
-    if (!complaint) return;
-
-    const statusOptions: { label: string; status: Complaint['status'] }[] = [];
-
-    if (complaint.status === 'open') {
-      statusOptions.push(
-        { label: 'Mark as In Progress', status: 'in-progress' },
-        { label: 'Close Complaint', status: 'closed' }
-      );
-    } else if (complaint.status === 'in-progress') {
-      statusOptions.push(
-        { label: 'Mark as Resolved', status: 'resolved' },
-        { label: 'Reopen', status: 'open' }
-      );
-    } else if (complaint.status === 'resolved') {
-      statusOptions.push(
-        { label: 'Close Complaint', status: 'closed' },
-        { label: 'Reopen', status: 'open' }
-      );
-    }
-
-    if (statusOptions.length === 0) {
-      Alert.alert('Info', 'This complaint is closed and cannot be modified');
+  const handleSendReply = async () => {
+    if (!replyText.trim()) {
+      Alert.alert('Error', 'Please enter a message');
       return;
     }
 
-    const buttons = statusOptions.map(option => ({
-      text: option.label,
-      onPress: () => handleChangeStatus(option.status),
-    }));
+    setSendingReply(true);
+    try {
+      const response = await MakeApiRequest({
+        apiUrl: `http://10.0.2.2:5000/api/complaints/${complaintId}/reply`,
+        apiMethod: POST,
+        apiData: {
+          message: replyText.trim(),
+          isAdminReply: false,
+        },
+      });
 
-    Alert.alert('Change Status', 'Select new status', [
-      ...buttons,
-      { text: 'Cancel', style: 'cancel' as const }
-    ] as any);
+      if (response.data.success) {
+        setReplyText('');
+        await loadComplaintDetails();
+      }
+    } catch (error: any) {
+      console.error('Error sending reply:', error);
+      Alert.alert('Error', error.response?.data?.message || 'Failed to send reply');
+    } finally {
+      setSendingReply(false);
+    }
   };
 
-  const getDaysOpen = (submittedDate: string): number => {
-    const submitted = new Date(submittedDate);
-    const today = new Date();
-    const diffTime = Math.abs(today.getTime() - submitted.getTime());
-    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-    return diffDays;
+  const getStatusColor = (status: string) => {
+    switch (status) {
+      case 'open':
+      case 're-open':
+        return '#E65100';
+      case 'in-process':
+        return '#1565C0';
+      case 'on-hold':
+        return '#F57C00';
+      case 'close':
+        return '#558B2F';
+      case 'dismiss':
+        return '#757575';
+      default:
+        return '#999';
+    }
+  };
+
+  const getPriorityColor = (priority: string) => {
+    switch (priority) {
+      case 'low':
+        return '#558B2F';
+      case 'medium':
+        return '#1565C0';
+      case 'high':
+        return '#E65100';
+      default:
+        return '#999';
+    }
+  };
+
+  const getStatusLabel = (status: string) => {
+    switch (status) {
+      case 'open':
+        return 'Open';
+      case 'in-process':
+        return 'In Progress';
+      case 'on-hold':
+        return 'On Hold';
+      case 'close':
+        return 'Closed';
+      case 're-open':
+        return 'Re-opened';
+      case 'dismiss':
+        return 'Dismissed';
+      default:
+        return status;
+    }
   };
 
   if (loading) {
     return (
       <Container>
         <View style={complaintDetailsStyles.container}>
-          <HeaderComponent
-            Title="Complaint Details"
-            onPress={() => navigation.goBack()}
-          />
-          <View style={complaintDetailsStyles.emptyContainer}>
+          <HeaderComponent Title="Complaint Details" onPress={() => navigation.goBack()} />
+          <View style={complaintDetailsStyles.loadingContainer}>
             <ActivityIndicator size="large" color={COLORS.DARK_BLUE} />
-            <Text style={complaintDetailsStyles.emptySubText}>Loading details...</Text>
+            <Text style={complaintDetailsStyles.loadingText}>Loading...</Text>
           </View>
         </View>
       </Container>
@@ -185,174 +152,140 @@ const ComplaintDetails: React.FC<Props> = ({ route, navigation }) => {
     return (
       <Container>
         <View style={complaintDetailsStyles.container}>
-          <HeaderComponent
-            Title="Complaint Details"
-            onPress={() => navigation.goBack()}
-          />
-          <View style={complaintDetailsStyles.emptyContainer}>
-            <Text style={complaintDetailsStyles.emptyIcon}>📋</Text>
-            <Text style={complaintDetailsStyles.emptyText}>Complaint not found</Text>
+          <HeaderComponent Title="Complaint Details" onPress={() => navigation.goBack()} />
+          <View style={complaintDetailsStyles.loadingContainer}>
+            <Text style={complaintDetailsStyles.errorText}>Complaint not found</Text>
           </View>
         </View>
       </Container>
     );
   }
 
-  const daysOpen = getDaysOpen(complaint.submittedDate);
-  const needsEscalation = (complaint.status === 'open' || complaint.status === 'in-progress') && daysOpen > 7;
-
   return (
     <Container>
-      <View style={complaintDetailsStyles.container}>
-        <HeaderComponent
-          Title="Complaint Details"
-          onPress={() => navigation.goBack()}
-        />
-      
-        <ScrollView 
-          style={complaintDetailsStyles.contentWrapper}
+      <KeyboardAvoidingView
+        style={complaintDetailsStyles.container}
+        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+        keyboardVerticalOffset={Platform.OS === 'ios' ? 90 : 0}
+      >
+        <HeaderComponent Title="Complaint Details" onPress={() => navigation.goBack()} />
+
+        <ScrollView
+          style={complaintDetailsStyles.content}
           showsVerticalScrollIndicator={false}
+          refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} colors={[COLORS.DARK_BLUE]} />}
         >
-          {/* Header Section */}
-          <View style={complaintDetailsStyles.headerSection}>
-            <View style={complaintDetailsStyles.iconTitleRow}>
-              <Text style={complaintDetailsStyles.categoryIconLarge}>
-                {getCategoryIcon(complaint.category)}
-              </Text>
-              <View style={complaintDetailsStyles.titleColumn}>
-                <Text style={complaintDetailsStyles.complaintTitle}>{complaint.title}</Text>
-                <Text style={complaintDetailsStyles.categoryText}>
-                  {getCategoryLabel(complaint.category)}
+          {/* Header */}
+          <View style={complaintDetailsStyles.header}>
+            <View style={complaintDetailsStyles.headerRow}>
+              <View style={[complaintDetailsStyles.statusBadge, { backgroundColor: `${getStatusColor(complaint.complaintStatus)}20` }]}>
+                <Text style={[complaintDetailsStyles.statusText, { color: getStatusColor(complaint.complaintStatus) }]}>
+                  {getStatusLabel(complaint.complaintStatus)}
+                </Text>
+              </View>
+              <View style={[complaintDetailsStyles.priorityBadge, { backgroundColor: `${getPriorityColor(complaint.priority)}20` }]}>
+                <Text style={[complaintDetailsStyles.priorityText, { color: getPriorityColor(complaint.priority) }]}>
+                  {complaint.priority.toUpperCase()}
                 </Text>
               </View>
             </View>
 
-            <View style={complaintDetailsStyles.badgesRow}>
-              <View style={[
-                complaintDetailsStyles.priorityBadge,
-                { backgroundColor: `${getPriorityColor(complaint.priority)}20` }
-              ]}>
-                <Text style={[
-                  complaintDetailsStyles.priorityText,
-                  { color: getPriorityColor(complaint.priority) }
-                ]}>
-                  {complaint.priority.toUpperCase()} PRIORITY
-                </Text>
-              </View>
-              
-              <View style={[
-                complaintDetailsStyles.statusBadge,
-                { backgroundColor: `${getStatusColor(complaint.status)}20` }
-              ]}>
-                <Text style={[
-                  complaintDetailsStyles.statusText,
-                  { color: getStatusColor(complaint.status) }
-                ]}>
-                  {getStatusLabel(complaint.status).toUpperCase()}
-                </Text>
-              </View>
-            </View>
+            <Text style={complaintDetailsStyles.title}>{complaint.title}</Text>
+            <Text style={complaintDetailsStyles.category}>📋 {complaint.category}</Text>
+            <Text style={complaintDetailsStyles.date}>
+              Submitted on {new Date(complaint.createdAt).toLocaleDateString('en-GB', {
+                day: '2-digit',
+                month: 'short',
+                year: 'numeric',
+              })}
+            </Text>
+          </View>
 
-            {needsEscalation && (
-              <View style={complaintDetailsStyles.escalationWarning}>
-                <Text style={complaintDetailsStyles.escalationIcon}>⚠️</Text>
-                <Text style={complaintDetailsStyles.escalationText}>
-                  This complaint is {daysOpen} days old and needs escalation
-                </Text>
+          {/* Description */}
+          <View style={complaintDetailsStyles.section}>
+            <Text style={complaintDetailsStyles.sectionTitle}>Description</Text>
+            <Text style={complaintDetailsStyles.description}>{complaint.description}</Text>
+          </View>
+
+          {/* Replies Thread */}
+          <View style={complaintDetailsStyles.section}>
+            <Text style={complaintDetailsStyles.sectionTitle}>
+              Conversation ({complaint.replies?.length || 0})
+            </Text>
+
+            {complaint.replies && complaint.replies.length > 0 ? (
+              complaint.replies.map((reply: any, index: number) => (
+                <View
+                  key={index}
+                  style={[
+                    complaintDetailsStyles.replyCard,
+                    reply.isAdminReply && complaintDetailsStyles.adminReplyCard,
+                  ]}
+                >
+                  <View style={complaintDetailsStyles.replyHeader}>
+                    <View style={complaintDetailsStyles.replyAuthor}>
+                      <View
+                        style={[
+                          complaintDetailsStyles.avatarCircle,
+                          reply.isAdminReply && complaintDetailsStyles.adminAvatarCircle,
+                        ]}
+                      >
+                        <Text style={complaintDetailsStyles.avatarText}>
+                          {reply.isAdminReply ? '👨‍💼' : '👤'}
+                        </Text>
+                      </View>
+                      <View>
+                        <Text style={complaintDetailsStyles.authorName}>
+                          {reply.isAdminReply ? 'Admin' : reply.createdBy?.firstName || 'You'}
+                        </Text>
+                        <Text style={complaintDetailsStyles.replyTime}>
+                          {new Date(reply.createdAt).toLocaleDateString('en-GB', {
+                            day: '2-digit',
+                            month: 'short',
+                            hour: '2-digit',
+                            minute: '2-digit',
+                          })}
+                        </Text>
+                      </View>
+                    </View>
+                  </View>
+                  <Text style={complaintDetailsStyles.replyMessage}>{reply.message}</Text>
+                </View>
+              ))
+            ) : (
+              <View style={complaintDetailsStyles.emptyReplies}>
+                <Text style={complaintDetailsStyles.emptyRepliesText}>No replies yet</Text>
               </View>
             )}
           </View>
-
-          {/* Description Section */}
-          <View style={complaintDetailsStyles.section}>
-            <Text style={complaintDetailsStyles.sectionTitle}>Description</Text>
-            <Text style={complaintDetailsStyles.descriptionText}>{complaint.description}</Text>
-          </View>
-
-          {/* Timeline Section */}
-          <View style={complaintDetailsStyles.section}>
-            <Text style={complaintDetailsStyles.sectionTitle}>Timeline</Text>
-            
-            <View style={complaintDetailsStyles.timelineContainer}>
-              <View style={complaintDetailsStyles.timelineItem}>
-                <View style={complaintDetailsStyles.timelineDot} />
-                <View style={complaintDetailsStyles.timelineContent}>
-                  <Text style={complaintDetailsStyles.timelineLabel}>Submitted</Text>
-                  <Text style={complaintDetailsStyles.timelineDate}>{complaint.submittedDate}</Text>
-                  <Text style={complaintDetailsStyles.timelineSubtext}>
-                    {daysOpen} day{daysOpen !== 1 ? 's' : ''} ago
-                  </Text>
-                </View>
-              </View>
-
-              {complaint.assignedTo && (
-                <View style={complaintDetailsStyles.timelineItem}>
-                  <View style={[complaintDetailsStyles.timelineDot, complaintDetailsStyles.timelineDotBlue]} />
-                  <View style={complaintDetailsStyles.timelineContent}>
-                    <Text style={complaintDetailsStyles.timelineLabel}>Assigned</Text>
-                    <Text style={complaintDetailsStyles.timelineDate}>{complaint.assignedTo}</Text>
-                  </View>
-                </View>
-              )}
-
-              {complaint.resolvedDate && (
-                <View style={complaintDetailsStyles.timelineItem}>
-                  <View style={[complaintDetailsStyles.timelineDot, complaintDetailsStyles.timelineDotGreen]} />
-                  <View style={complaintDetailsStyles.timelineContent}>
-                    <Text style={complaintDetailsStyles.timelineLabel}>Resolved</Text>
-                    <Text style={complaintDetailsStyles.timelineDate}>{complaint.resolvedDate}</Text>
-                  </View>
-                </View>
-              )}
-            </View>
-          </View>
-
-          {/* Resolution Section */}
-          {complaint.resolution && (
-            <View style={complaintDetailsStyles.section}>
-              <Text style={complaintDetailsStyles.sectionTitle}>Resolution</Text>
-              <View style={complaintDetailsStyles.resolutionCard}>
-                <Text style={complaintDetailsStyles.resolutionText}>{complaint.resolution}</Text>
-              </View>
-            </View>
-          )}
-
-          {/* Attachments Section */}
-          {complaint.attachments && complaint.attachments.length > 0 && (
-            <View style={complaintDetailsStyles.section}>
-              <Text style={complaintDetailsStyles.sectionTitle}>
-                Attachments ({complaint.attachments.length})
-              </Text>
-              <View style={complaintDetailsStyles.attachmentsContainer}>
-                {complaint.attachments.map((attachment, index) => (
-                  <View key={index} style={complaintDetailsStyles.attachmentItem}>
-                    <Text style={complaintDetailsStyles.attachmentIcon}>📎</Text>
-                    <Text style={complaintDetailsStyles.attachmentText} numberOfLines={1}>
-                      {attachment}
-                    </Text>
-                  </View>
-                ))}
-              </View>
-            </View>
-          )}
-
-          {/* Action Buttons */}
-          {complaint.status !== 'closed' && (
-            <View style={complaintDetailsStyles.actionSection}>
-              <TouchableOpacity
-                style={complaintDetailsStyles.changeStatusButton}
-                onPress={showStatusChangeOptions}
-              >
-                <Text style={complaintDetailsStyles.changeStatusButtonText}>
-                  Change Status
-                </Text>
-              </TouchableOpacity>
-            </View>
-          )}
-
-          <View style={complaintDetailsStyles.bottomSpacer} />
         </ScrollView>
-      </View>
+
+        {/* Reply Input */}
+        {complaint.complaintStatus !== 'close' && complaint.complaintStatus !== 'dismiss' && (
+          <View style={complaintDetailsStyles.replyInputContainer}>
+            <TextInput
+              style={complaintDetailsStyles.replyInput}
+              placeholder="Type your message..."
+              placeholderTextColor="#999"
+              value={replyText}
+              onChangeText={setReplyText}
+              multiline
+              maxLength={500}
+            />
+            <TouchableOpacity
+              style={[complaintDetailsStyles.sendButton, (sendingReply || !replyText.trim()) && complaintDetailsStyles.sendButtonDisabled]}
+              onPress={handleSendReply}
+              disabled={sendingReply || !replyText.trim()}
+            >
+              {sendingReply ? (
+                <ActivityIndicator color="#fff" size="small" />
+              ) : (
+                <Text style={complaintDetailsStyles.sendButtonText}>Send</Text>
+              )}
+            </TouchableOpacity>
+          </View>
+        )}
+      </KeyboardAvoidingView>
     </Container>
   );
 };

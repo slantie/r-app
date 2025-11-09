@@ -1,36 +1,45 @@
 import React, { useState } from 'react';
 import { View, Text, ScrollView, TouchableOpacity, TextInput, Alert, ActivityIndicator } from 'react-native';
+import { useSelector } from 'react-redux';
 import { Container, HeaderComponent } from '../../components/common';
-import Database, { Complaint } from '../../services/database';
+import { MakeApiRequest } from '../../services/apiService';
+import { POST } from '../../constants/api';
 import { COLORS } from '../../constants';
 import addComplaintStyles from './styles/addComplaintStyles';
 
 interface AddComplaintProps {
   navigation: {
     goBack: () => void;
+    navigate: (screen: string) => void;
   };
 }
 
 const AddComplaint: React.FC<AddComplaintProps> = ({ navigation }) => {
-  const [category, setCategory] = useState<Complaint['category'] | ''>('');
-  const [priority, setPriority] = useState<Complaint['priority']>('medium');
+  const { userData } = useSelector((state: any) => state.otp);
+  const userId = userData?.user?._id || userData?._id;
+  const memberId = userData?.member?._id;
+  const unitId = userData?.member?.unitId;
+  const buildingId = userData?.member?.buildingId || userData?.user?.buildingId;
+
+  const [category, setCategory] = useState('');
+  const [priority, setPriority] = useState('medium');
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
   const [submitting, setSubmitting] = useState(false);
 
-  const categories: { value: Complaint['category']; label: string; icon: string }[] = [
+  const categories = [
     { value: 'plumbing', label: 'Plumbing', icon: '🚰' },
     { value: 'electrical', label: 'Electrical', icon: '💡' },
     { value: 'cleaning', label: 'Cleaning', icon: '🧹' },
     { value: 'security', label: 'Security', icon: '🔒' },
+    { value: 'maintenance', label: 'Maintenance', icon: '🔧' },
     { value: 'other', label: 'Other', icon: '📋' },
   ];
 
-  const priorities: { value: Complaint['priority']; label: string; color: string }[] = [
+  const priorities = [
     { value: 'low', label: 'Low', color: '#558B2F' },
     { value: 'medium', label: 'Medium', color: '#1565C0' },
     { value: 'high', label: 'High', color: '#E65100' },
-    { value: 'urgent', label: 'Urgent', color: '#C62828' },
   ];
 
   const handleSubmit = async () => {
@@ -51,36 +60,36 @@ const AddComplaint: React.FC<AddComplaintProps> = ({ navigation }) => {
     setSubmitting(true);
 
     try {
-      const newComplaint: Complaint = {
-        id: `C${Date.now()}`,
-        category,
-        title: title.trim(),
-        description: description.trim(),
-        priority,
-        status: 'open',
-        submittedDate: new Date().toLocaleDateString('en-GB', {
-          day: '2-digit',
-          month: 'short',
-          year: 'numeric',
-        }),
-        createdAt: new Date().toISOString(),
-      };
+      const response = await MakeApiRequest({
+        apiUrl: 'http://10.0.2.2:5000/api/complaints',
+        apiMethod: POST,
+        apiData: {
+          title: title.trim(),
+          category,
+          priority,
+          description: description.trim(),
+          complaintType: 'unit',
+          buildingId,
+          unitId,
+          memberId,
+        },
+      });
 
-      await Database.addComplaint(newComplaint);
-
-      Alert.alert(
-        'Success',
-        'Your complaint has been submitted successfully. Our team will review it shortly.',
-        [
-          {
-            text: 'OK',
-            onPress: () => navigation.goBack(),
-          },
-        ]
-      );
-    } catch (error) {
+      if (response.data.success) {
+        Alert.alert(
+          'Success',
+          'Your complaint has been submitted successfully. Our team will review it shortly.',
+          [
+            {
+              text: 'OK',
+              onPress: () => navigation.goBack(),
+            },
+          ]
+        );
+      }
+    } catch (error: any) {
       console.error('Error submitting complaint:', error);
-      Alert.alert('Error', 'Failed to submit complaint. Please try again.');
+      Alert.alert('Error', error.response?.data?.message || 'Failed to submit complaint. Please try again.');
     } finally {
       setSubmitting(false);
     }
@@ -161,13 +170,12 @@ const AddComplaint: React.FC<AddComplaintProps> = ({ navigation }) => {
             </Text>
             <TextInput
               style={addComplaintStyles.input}
-              placeholder="Brief summary of the issue"
-              placeholderTextColor={COLORS.LIGHT_GRAY}
+              placeholder="Enter complaint title"
+              placeholderTextColor="#999"
               value={title}
               onChangeText={setTitle}
               maxLength={100}
             />
-            <Text style={addComplaintStyles.charCount}>{title.length}/100</Text>
           </View>
 
           {/* Description Input */}
@@ -177,44 +185,28 @@ const AddComplaint: React.FC<AddComplaintProps> = ({ navigation }) => {
             </Text>
             <TextInput
               style={[addComplaintStyles.input, addComplaintStyles.textArea]}
-              placeholder="Describe the issue in detail..."
-              placeholderTextColor={COLORS.LIGHT_GRAY}
+              placeholder="Describe your complaint in detail..."
+              placeholderTextColor="#999"
               value={description}
               onChangeText={setDescription}
               multiline
               numberOfLines={6}
               textAlignVertical="top"
-              maxLength={500}
             />
-            <Text style={addComplaintStyles.charCount}>{description.length}/500</Text>
-          </View>
-
-          {/* Info Box */}
-          <View style={addComplaintStyles.infoBox}>
-            <Text style={addComplaintStyles.infoIcon}>💡</Text>
-            <Text style={addComplaintStyles.infoText}>
-              Your complaint will be reviewed by our management team. You'll be notified about the
-              progress via notifications.
-            </Text>
           </View>
 
           {/* Submit Button */}
           <TouchableOpacity
-            style={[
-              addComplaintStyles.submitButton,
-              submitting && addComplaintStyles.submitButtonDisabled,
-            ]}
+            style={[addComplaintStyles.submitButton, submitting && addComplaintStyles.submitButtonDisabled]}
             onPress={handleSubmit}
             disabled={submitting}
           >
             {submitting ? (
-              <ActivityIndicator size="small" color={COLORS.WHITE} />
+              <ActivityIndicator color="#fff" />
             ) : (
               <Text style={addComplaintStyles.submitButtonText}>Submit Complaint</Text>
             )}
           </TouchableOpacity>
-
-          <View style={addComplaintStyles.bottomSpacer} />
         </ScrollView>
       </View>
     </Container>
