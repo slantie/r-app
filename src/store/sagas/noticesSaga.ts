@@ -35,9 +35,13 @@ function* fetchNoticesSaga(action: any): Generator<any, void, any> {
       apiParams: params,
     });
 
-    console.log('✅ Notices response:', response.data);
+    console.log('✅ Notices API response:', response.data);
 
-    yield put(fetchNoticesSuccess(response.data));
+    // Extract the data array from the response
+    const noticesData = response.data?.data || response.data || [];
+    console.log(`✅ Found ${noticesData.length} notices`);
+
+    yield put(fetchNoticesSuccess(noticesData));
   } catch (error: any) {
     console.error('❌ Fetch notices error:', error);
     yield put(fetchNoticesFailure(error.message || 'Failed to fetch notices'));
@@ -54,8 +58,13 @@ function* fetchNoticeDetailsSaga(action: any): Generator<any, void, any> {
       apiMethod: GET,
     });
 
-    yield put(fetchNoticeDetailsSuccess(response.data));
+    // Extract the data from the response
+    const noticeData = response.data?.data || response.data;
+    console.log('✅ Notice details:', noticeData);
+
+    yield put(fetchNoticeDetailsSuccess(noticeData));
   } catch (error: any) {
+    console.error('❌ Fetch notice details error:', error);
     yield put(
       fetchNoticeDetailsFailure(
         error.message || 'Failed to fetch notice details',

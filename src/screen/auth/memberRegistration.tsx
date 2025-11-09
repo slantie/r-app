@@ -8,7 +8,7 @@ import { REGISTER_MEMBER, APP_CONSTANTS } from '../../services/httpService';
 import PrefManager from '../../utils/prefManager';
 import { setAuthToken } from '../../store/actions/auth/loginAction';
 
-const MemberRegistration = ({ route, navigation }: any) => {
+const MemberRegistration = ({ route, _navigation }: any) => {
   const dispatch = useDispatch();
   const { userData, buildingId, unitId, unitData } = route.params;
 
@@ -99,7 +99,20 @@ const MemberRegistration = ({ route, navigation }: any) => {
           parsedUserData.isMemberRegistered = true;
           parsedUserData.memberStatus = memberStatus;
           parsedUserData.memberId = member._id;
+          
+          // Store member data with buildingId, unitId, blockId for future use
+          parsedUserData.member = {
+            _id: member._id,
+            buildingId: member.buildingId || buildingId,
+            blockId: member.blockId || unitData?.blockId,
+            floorId: member.floorId || unitData?.floorId,
+            unitId: member.unitId || unitId,
+            memberType: member.memberType || memberType,
+            memberStatus: memberStatus,
+          };
+          
           await PrefManager.setValue('userData', JSON.stringify(parsedUserData));
+          console.log('✅ Stored member data:', parsedUserData.member);
         }
 
         // Show status-based alert
